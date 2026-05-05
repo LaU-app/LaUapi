@@ -9,8 +9,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-use function PHPUnit\Framework\isEmpty;
-
 /**
  * Controlador de Posts para la API de LaU app
  * Maneja todas las operaciones CRUD de posts (crear, leer, actualizar, eliminar)
@@ -78,34 +76,23 @@ class PostController extends Controller
         $carrera = $request->carrera;
 
         try {
-            if(isEmpty($carrera)){
-                $posts = Post::with(['user', 'comentarios.user', 'likes'])
-                ->withCount(['comentarios', 'likes'])
-                ->whereHas('user', function ($query) use ($universidad, $carrera) {
-                    $query->where('universidad_id', $universidad);
-                })
-                ->latest()
-                ->paginate(20);
-            }
-            
-            if(isEmpty($universidad)){
-                $posts = Post::with(['user', 'comentarios.user', 'likes'])
-                ->withCount(['comentarios', 'likes'])
-                ->whereHas('user', function ($query) use ($universidad, $carrera) {
-                    $query->where('carrera_id', $carrera);
-                })
-                ->latest()
-                ->paginate(20);
+            // Construir el query base
+            $query = Post::with(['user', 'comentarios.user', 'likes'])
+                ->withCount(['comentarios', 'likes']);
+
+            // Aplicar filtros solo si no están vacíos
+            if (!empty($universidad) || !empty($carrera)) {
+                $query->whereHas('user', function ($q) use ($universidad, $carrera) {
+                    if (!empty($universidad)) {
+                        $q->where('universidad_id', $universidad);
+                    }
+                    if (!empty($carrera)) {
+                        $q->where('carrera_id', $carrera);
+                    }
+                });
             }
 
-            $posts = Post::with(['user', 'comentarios.user', 'likes'])
-                ->withCount(['comentarios', 'likes'])
-                ->whereHas('user', function ($query) use ($universidad, $carrera) {
-                    $query->where('universidad_id', $universidad)
-                        ->where('carrera_id', $carrera);
-                })
-                ->latest()
-                ->paginate(20);
+            $posts = $query->latest()->paginate(20);
 
 
             $posts->getCollection()->transform(function ($post) {
