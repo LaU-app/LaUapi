@@ -1,0 +1,119 @@
+{
+  "repo_notes": [
+    {
+      "content": "Este repositorio se usa como backend de API REST (Sanctum) para clientes móviles, y un panel web de administración Super Usuario (SU). Las vistas Blade activas son exclusivamente las del panel SU (resources/views/su/* y resources/views/layouts/app-su.blade.php). No documentar vistas Blade de frontend general (auth/, colaboradores/, components/, errors/, livewire/, perfil/, posts/, users/)."
+    }
+  ],
+  "pages": [
+    {
+      "title": "LaUapi — Project Overview",
+      "purpose": "Introducción a LaUapi: API REST académica/social universitaria autenticada con Laravel Sanctum + panel de administración SU. Stack tecnológico, arquitectura dual (API + panel SU) y cómo empezar."
+    },
+    {
+      "title": "Getting Started & Environment Setup",
+      "purpose": "Guía paso a paso de instalación: clonado, dependencias (Composer/NPM), configuración .env, base de datos, migraciones, storage link y servidor de desarrollo. Variables de entorno requeridas (DB, Pusher, Firebase, Make webhook).",
+      "parent": "LaUapi — Project Overview"
+    },
+    {
+      "title": "Project Structure & Key Technologies",
+      "purpose": "Árbol de directorios enfocado en app/Http/Controllers/Api, routes/api.php, routes/web.php (solo sección SU), resources/views/su/*, resources/views/layouts/app-su.blade.php, y app/Models. Tecnologías: Laravel 12, PHP 8.2, Sanctum, Pusher, FCM, Intervention Image, iTunes API, Vite.",
+      "parent": "LaUapi — Project Overview"
+    },
+    {
+      "title": "Core Data Models & Database Schema",
+      "purpose": "Panorama de los modelos Eloquent y esquema de base de datos. Enlaza a páginas hijas por dominio: identidad, contenido, grafo social/académico y productividad."
+    },
+    {
+      "title": "User Model & Identity System",
+      "purpose": "Modelo User: atributos (name, username, imagen, insignia, role, is_online, last_activity, gender, profession), accessor imagen_url, relaciones (followers/following many-to-many autoref, universidad, carrera, tasks, pomodoroSessions, insignias, socialLinks), presencia online (updateActivity, setOffline, scopeOnline), HasApiTokens (Sanctum), modelo su_ad para administradores.",
+      "parent": "Core Data Models & Database Schema"
+    },
+    {
+      "title": "Post Model & Content Types",
+      "purpose": "Modelo Post: cuatro tipos (imagen, musica, texto, archivo), campos fillable incluyendo toda la metadata iTunes, visibility (public/followers), accessors (imagen_feed_url, compact_time, full_time, formatted_duration), métodos de verificación (isMusicPost, isPublic, canBeViewedBy), pipeline de optimización WebP (imagen_mini).",
+      "parent": "Core Data Models & Database Schema"
+    },
+    {
+      "title": "Academic & Social Graph Models",
+      "purpose": "Modelos Universidad, Carrera, Follower, Like, Comentario, SocialLink, Insignia, Banner, Reporte y Notification. Tablas pivote (carrera_universidad, insignia_user, banner_user_views, followers). NotificationService: lógica anti-spam, createFollowNotification, createLikeNotification, createCommentNotification, createCommentReplyNotification.",
+      "parent": "Core Data Models & Database Schema"
+    },
+    {
+      "title": "Productivity Models: Tasks & Pomodoro",
+      "purpose": "Modelos Task (status: pending/in_progress/completed/cancelled, priority: low/medium/high, uuid_cliente, scopes) y PomodoroSession (status: running/completed/cancelled, uuid_cliente, break_type, scopes today/thisWeek/thisMonth). Seeders de productividad.",
+      "parent": "Core Data Models & Database Schema"
+    },
+    {
+      "title": "REST API Layer",
+      "purpose": "Panorama de la superficie API definida en routes/api.php. Autenticación con Sanctum (tokens), rutas públicas vs protegidas, respuesta JSON estándar {success, data, message}. Enlaza a páginas hijas por dominio de la API."
+    },
+    {
+      "title": "Authentication API",
+      "purpose": "Endpoints de auth: POST /api/auth/login (email+password → token Sanctum), POST /api/auth/register (RegisterRequest + EmailDomain rule, roles: aspirante/estudiante/egresado), POST /api/auth/social-login (Google/Microsoft OAuth con flujo parcial de registro y detección de universidad por dominio), GET /api/auth/me, PUT /api/user/edit (incluyendo subida de imagen con Intervention Image 400px), POST /api/auth/logout, check-username, check-email.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Posts, Comments & Likes API",
+      "purpose": "Posts: GET /api/posts (feed paginado con eager loading), POST /api/posts (store con pipeline WebP dual: full 1200px 85% + mini 600px 70%, campos iTunes para música, archivo PDF/DOC/ZIP), GET /api/posts/{post} (show con comentarios jerárquicos via formatCommentTree), POST /api/posts/filter (por universidad/carrera), DELETE. Comentarios: CRUD con anidamiento max 5 niveles, parent_id, depth, reply_count, lockForUpdate anti-race, gif_url. Likes: toggle, index, check; NotificationService integrado.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Users, Followers & Social Graph API",
+      "purpose": "Users: GET /api/users (filtros search/universidad_id/carrera_id, ordenamiento ABC/DESC), GET /api/users/search (?q, limit 10), GET /api/users/{user} (perfil completo con posts y contadores), GET /api/users/{id}/stats (posts_count, followers_count, following_count, total_likes_received, is_following), GET /api/user/{username} (foreignUser). Followers: follow/unfollow/toggle con NotificationService, check, followers/following paginados con is_following, stats.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Notifications API (In-App & Push)",
+      "purpose": "Notifications: GET /api/notifications (paginado 20, transformación con from_user_data, post_data, message, time_ago), unread, count, byType (like/comment/follow), markAsRead, markAllAsRead, destroy, clearRead. Push: registerDevice (DeviceToken con platform android/ios/web, updateOrCreate), unregisterDevice. FCM v1 con Google ServiceAccountCredentials, cache de access_token, filtro de dispositivos activos (30 días). Método estático sendPushNotification reutilizable.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Chat API (Real-Time Messaging)",
+      "purpose": "ChatApiController: getContactsJSON (lista con last_message, unread_count, is_online), fetchMessagesJSON (historial con adjuntos en rutas relativas /storage/attachments/), sendMessageJSON (Pusher broadcast + push FCM al destinatario), toggleFavorite/checkFavorite/getFavoritesJSON, getSharedPhotos (solo imágenes), pusherAuth (canal private-chatify.{userId}), typing, makeSeen, unreadCount. Modelos ChMessage y ChFavorite (UUID).",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Music Search & Cross-Platform Integration API",
+      "purpose": "MusicSearchController: GET /api/music/search (iTunes Search API con cache 1h, paginación, filtro explicit:No), GET /api/music/track (por trackId), GET /api/music/genre, GET /api/music/popular (término aleatorio pop/rock/reggaeton/etc). Transformación: artworkUrlHigh (600x600), duration formateada, spotifySearchUrl generado, hasPreview. CrossPlatformMusicService para enlaces cruzados Apple Music ↔ Spotify.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Productivity API: Tasks & Pomodoro",
+      "purpose": "TaskController: apiResource /api/tasks (CRUD con filtros status/priority/overdue, ordenamiento por priority/due_date, paginado), GET /api/tasks-stats (total, pending, in_progress, completed, overdue, pomodoros today/week). PomodoroController: POST /api/pomodoro/start (uuid_cliente dedup, solo 1 sesión running), POST /api/pomodoro/complete (actualiza task.incrementPomodoros), POST /api/pomodoro/cancel, GET /api/pomodoro/leaderboard (week/month/custom con JOIN users), sessions, active, stats.",
+      "parent": "REST API Layer"
+    },
+    {
+      "title": "Super User (SU) Administration Panel",
+      "purpose": "Panel web de administración bajo prefix us/su/lau, middleware auth:super, guard super con modelo su_ad. Layout app-su.blade.php. Vistas en resources/views/su/*. Enlaza a páginas hijas por sección de gestión."
+    },
+    {
+      "title": "SU Dashboard & Academic Management",
+      "purpose": "Dashboard: estadísticas agregadas (totalUsers, activeCount banners, reportesPendientes). Universidades: CRUD (nombre, dominio, siglas, color_primario), validación dominio unique. Carreras: catálogo global + vinculación pivote (syncWithoutDetaching) a universidades. Layout app-su.blade.php con sidebar, toast notifications, dark mode.",
+      "parent": "Super User (SU) Administration Panel"
+    },
+    {
+      "title": "SU User Moderation & Badges",
+      "purpose": "Usuarios: vista con posts_count, followers_count, reportesRecibidos_count; búsqueda AJAX. Perfil detallado (su.perfil). Eliminación con verificación de password_verific_modify del su_ad. Insignias: CRUD de Insignia (nombre, slug, icono, bgicon, descripcion), asignación via sync() pivote insignia_user. Reportes: listado paginado con reporter y reportedUser.",
+      "parent": "Super User (SU) Administration Panel"
+    },
+    {
+      "title": "SU Banners, Announcements & App Updates",
+      "purpose": "Banners/Anuncios: CRUD (title, content, type: feature/update/info/warning, image_url o file upload a storage/banners, action_text/url, is_active, start_date/end_date), viewedByUsers tracking (pivote banner_user_views), resetViews (detach all). BannerController API: GET /api/banners/active (whereDoesntHave viewedByUsers), POST markViewed. App Updates: CRUD de AppUpdate (version, file_path ZIP, is_active toggle), activateup como rollback, AppUpdateController GET /api/check-update (version_compare anti-downgrade).",
+      "parent": "Super User (SU) Administration Panel"
+    },
+    {
+      "title": "Infrastructure, Configuration & Tooling",
+      "purpose": "Panorama de la capa de infraestructura: archivos de configuración, build con Vite, seeding de base de datos y comandos Artisan."
+    },
+    {
+      "title": "Configuration Files",
+      "purpose": "config/: app.php (locale: es, timezone), auth.php (guards web + super, provider su_ad), cors.php (CORS para API), sanctum.php (token expiry), chatify.php (Pusher), services.php (Spotify, Giphy, Make webhook), filesystems.php (disks: public, attachments).",
+      "parent": "Infrastructure, Configuration & Tooling"
+    },
+    {
+      "title": "Database Migrations & Seeders",
+      "purpose": "Historial completo de migraciones (posts, users, comments, likes, followers, universidades, carreras, notifications, banners, insignias, pomodoro, tasks, device_tokens, social_links, app_updates, reportes). Seeders: DatabaseSeeder, UniversidadSeeder, CarreraSeeder, CarreraUniversidadSeeder, UserSeeder, PostSeeder, LikeSeeder, FollowerSeeder, ComentarioSeeder, BannerSeeder, PomodoroSessionSeeder, TaskSeeder, SuperUserSeeder.",
+      "parent": "Infrastructure, Configuration & Tooling"
+    }
+  ]
+}
