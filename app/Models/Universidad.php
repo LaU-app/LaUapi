@@ -10,12 +10,17 @@ class Universidad extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'dominio'];
+    protected $fillable = ['nombre', 'dominio', 'siglas', 'color_primario'];
 
     protected $table = 'universidades';
 
     public function carreras()
     {
         return $this->belongsToMany(Carrera::class, 'carrera_universidades');
+    }
+
+    public function alumnos()
+    {
+        return $this->hasMany(User::class, 'universidad_id'); 
     }
 }

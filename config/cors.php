@@ -15,9 +15,11 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'uploads/*', 'storage/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
+    
+    // 'allowed_origins' => ['*'],
 
     'allowed_origins' => [
         'http://localhost:8100',
@@ -25,6 +27,7 @@ return [
         'capacitor://localhost',
         'ionic://localhost',
         'http://localhost',
+        'http://192.168.1.3:8100',
         'http://192.168.1.3',
         '*' // Solo para desarrollo, en producción especifica las IPs exactas
     ],

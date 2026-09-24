@@ -44,4 +44,8 @@ return [
         'api_key' => env('GIPHY_API_KEY'),
     ],
 
+    'make' => [
+    'webhook_url' => env('MAKE_WEBHOOK_URL'),
+],
+
 ];

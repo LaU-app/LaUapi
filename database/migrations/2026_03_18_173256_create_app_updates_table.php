@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('app_updates', function (Blueprint $table) {
+            $table->id();
+            $table->string('version')->unique(); // Ej: "1.0.5"
+            $table->string('file_path');         // Dónde se guardó el zip
+            $table->boolean('is_active')->default(false); // Para saber cuál versión mandar
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('app_updates');
+    }
+};

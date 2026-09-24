@@ -6,32 +6,22 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        $this->command->info('🌱 Iniciando poblado de la base de datos...');
-        
         $this->call([
-            ImageSeeder::class,      // Crear imágenes de muestra primero
-            SuperUserSeeder::class,  // Super usuario administrativo
-            UserSeeder::class,       // Usuarios con imágenes de perfil
-            PostSeeder::class,       // Posts con imágenes y música
-            ComentarioSeeder::class, // Comentarios en los posts
-            LikeSeeder::class,       // Likes en posts
-            FollowerSeeder::class,   // Relaciones de seguimiento
+            // 1. Infraestructura (Para que los usuarios puedan tener carrera/uni)
             UniversidadSeeder::class,
             CarreraSeeder::class,
             CarreraUniversidadSeeder::class,
+
+            // 2. Usuarios (NECESARIOS para que existan dueños de tareas)
+            SuperUserSeeder::class, // Tu admin
+            UserSeeder::class,      // Los usuarios normales
+
+            // 3. Pomodoro y Tareas (Tu lógica nueva)
+            TasksSeeder::class,           
+            PomodoroSessionSeeder::class, 
+            PomodoroPodiumSeeder::class,
         ]);
-        
-        $this->command->info('✅ Base de datos poblada exitosamente!');
-        $this->command->info('📊 Datos creados:');
-        $this->command->line('   • Super usuario administrativo');
-        $this->command->line('   • Usuarios con imágenes de perfil');
-        $this->command->line('   • Posts con imágenes y música');
-        $this->command->line('   • Comentarios y likes');
-        $this->command->line('   • Relaciones de seguimiento');
     }
 }

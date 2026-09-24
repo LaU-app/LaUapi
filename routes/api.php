@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PostController;
@@ -11,6 +10,11 @@ use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\MusicSearchController;
 use App\Http\Controllers\Api\UniversidadController;
 use App\Http\Controllers\Api\FollowerController;
+use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\PomodoroController;
+use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\ReporteController;
+use App\Http\Controllers\Api\AppUpdateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +30,9 @@ use App\Http\Controllers\Api\FollowerController;
 // Rutas públicas (no requieren autenticación)
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/social-login', [AuthController::class, 'socialLogin']);
+Route::post('/auth/check-username', [AuthController::class, 'checkUsername']);
+Route::post('/auth/check-email', [AuthController::class, 'checkEmail']);
 
 // Universidades y Carreras (públicas para el formulario de registro)
 Route::get('/universidades', [UniversidadController::class, 'index']);
@@ -35,12 +42,16 @@ Route::get('/carreras', [UniversidadController::class, 'getAllCarreras']);
 // Posts públicos (solo lectura)
 Route::get('/posts', [PostController::class, 'index']);
 Route::get('/posts/{post}', [PostController::class, 'show']);
+Route::post('/posts/filter', [PostController::class, 'filtropost']);
+Route::get('/posts/user/{userId}', [PostController::class, 'userPosts']);
 
 // Búsqueda de música iTunes (público)
 Route::get('/music/search', [MusicSearchController::class, 'search']);
 Route::get('/music/track', [MusicSearchController::class, 'getTrack']);
 Route::get('/music/genre', [MusicSearchController::class, 'searchByGenre']);
 Route::get('/music/popular', [MusicSearchController::class, 'getPopular']);
+
+Route::get('/check-update', [AppUpdateController::class, 'checkUpdate']);
 
 // Rutas protegidas (requieren autenticación con token Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
@@ -64,6 +75,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::get('/auth/user', [AuthController::class, 'me']); // Alias para compatibilidad
+    Route::put('/user/edit', [AuthController::class, 'edit']); // Estadísticas de seguimiento
+
+    //followers count
+    Route::get('/auth/followers/{id}', [FollowerController::class, 'followers']); // Alias para compatibilidad
+    Route::get('/auth/following/{id}', [FollowerController::class, 'following']);
 
     // Posts protegidos (crear y eliminar requieren autenticación)
     Route::post('/posts', [PostController::class, 'store']);
@@ -85,17 +101,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Usuarios
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/search', [UserController::class, 'search']);
+    Route::get('/users/{userIdentifier}/posts', [UserController::class, 'posts']); // Posts de un usuario específico
+    Route::get('/users/{userIdentifier}/stats', [UserController::class, 'stats']); // Estadísticas completas del usuario
     Route::get('/users/{user}', [UserController::class, 'show']);
+    Route::get('/user/{usuario_username}', [UserController::class, 'foreignUser']); // Alias para compatibilidad
 
     // Sistema de Seguimiento (Follow/Unfollow)
-    // Nota: {userIdentifier} puede ser ID numérico o username
-    Route::post('/users/{userIdentifier}/follow', [FollowerController::class, 'follow']); // Seguir usuario
-    Route::post('/users/{userIdentifier}/unfollow', [FollowerController::class, 'unfollow']); // Dejar de seguir
-    Route::post('/users/{userIdentifier}/follow/toggle', [FollowerController::class, 'toggle']); // Toggle follow/unfollow
-    Route::get('/users/{userIdentifier}/follow/check', [FollowerController::class, 'check']); // Verificar si sigue
-    Route::get('/users/{userIdentifier}/followers', [FollowerController::class, 'followers']); // Lista de seguidores
-    Route::get('/users/{userIdentifier}/following', [FollowerController::class, 'following']); // Lista de seguidos
-    Route::get('/users/{userIdentifier}/follow/stats', [FollowerController::class, 'stats']); // Estadísticas de seguimiento
+    Route::post('/users/{id}/follow', [FollowerController::class, 'follow']); // Seguir usuario
+    Route::post('/users/{id}/unfollow', [FollowerController::class, 'unfollow']); // Dejar de seguir
+    Route::post('/users/{id}/follow/toggle', [FollowerController::class, 'toggle']); // Toggle follow/unfollow
+    Route::get('/users/{id}/follow/check', [FollowerController::class, 'check']); // Verificar si sigue
+    Route::get('/users/{id}/followers', [FollowerController::class, 'followers']); // Lista de seguidores
+    Route::get('/users/{id}/following', [FollowerController::class, 'following']); // Lista de seguidos
+    Route::get('/users/{id}/follow/stats', [FollowerController::class, 'stats']); // Estadísticas de seguimiento
 
     // Notificaciones (likes, comentarios, seguidores)
     Route::get('/notifications', [NotificationController::class, 'index']); // Todas las notificaciones
@@ -110,6 +128,44 @@ Route::middleware('auth:sanctum')->group(function () {
     // Push Notifications - Registro de tokens de dispositivo
     Route::post('/notifications/register-device', [NotificationController::class, 'registerDevice']); // Registrar token FCM
     Route::post('/notifications/unregister-device', [NotificationController::class, 'unregisterDevice']); // Desregistrar token FCM
+
+    // Reportes de usuarios
+    Route::post('/reportes', [ReporteController::class, 'store']);
+
+    // ========== CHAT ROUTES ==========
+    Route::get('/chat/contacts', [App\Http\Controllers\Api\ChatApiController::class, 'getContactsJSON']);
+    Route::get('/chat/favorites', [App\Http\Controllers\Api\ChatApiController::class, 'getFavoritesJSON']);
+    Route::post('/chat/messages', [App\Http\Controllers\Api\ChatApiController::class, 'fetchMessagesJSON']);
+    Route::post('/chat/send', [App\Http\Controllers\Api\ChatApiController::class, 'sendMessageJSON']);
+    Route::post('/chat/typing', [App\Http\Controllers\Api\ChatApiController::class, 'typing']);
+    Route::post('/chat/auth', [App\Http\Controllers\Api\ChatApiController::class, 'pusherAuth']);
+    Route::post('/chat/favorite', [App\Http\Controllers\Api\ChatApiController::class, 'toggleFavorite']);
+    Route::post('/chat/checkFavorite', [App\Http\Controllers\Api\ChatApiController::class, 'checkFavorite']);
+    Route::post('/chat/shared', [App\Http\Controllers\Api\ChatApiController::class, 'getSharedPhotos']);
+    Route::post('/chat/makeSeen', [App\Http\Controllers\Api\ChatApiController::class, 'makeSeen']);
+    Route::get('/chat/unread-count', [App\Http\Controllers\Api\ChatApiController::class, 'unreadCount']);
+
+    // ========== TODO & POMODORO ROUTES ==========
+
+    // Tareas (Tasks)
+    Route::apiResource('tasks', TaskController::class);
+    Route::get('/tasks-stats', [TaskController::class, 'stats']); // Estadísticas de tareas
+
+    // Sesiones de Pomodoro
+    Route::prefix('pomodoro')->group(function () {
+        Route::post('/start', [PomodoroController::class, 'start']); // Iniciar sesión
+        Route::post('/complete', [PomodoroController::class, 'complete']); // Completar sesión
+        Route::post('/cancel', [PomodoroController::class, 'cancel']); // Cancelar sesión
+        Route::get('/leaderboard', [PomodoroController::class, 'leaderboard']); // Podio semanal/mensual
+        Route::get('/sessions', [PomodoroController::class, 'index']); // Listar sesiones
+        Route::get('/active', [PomodoroController::class, 'active']); // Sesión activa
+        Route::get('/stats', [PomodoroController::class, 'stats']); // Estadísticas de Pomodoro
+    });
+
+    // Banner de la app
+    Route::get('/banners/active', [BannerController::class, 'getActive']);
+
+    Route::post('/banners/{banner}/view', [BannerController::class, 'markViewed']);
 });
 
 // Ruta de prueba de la API

@@ -48,6 +48,7 @@ class CarreraSeeder extends Seeder
             ['nombre' => 'Licenciatura en Relaciones internacionales'], // tambien en ugb, ufg, matias
             ['nombre' => 'Licenciatura en Ciencia Politica'], //tambien en ufg
             ['nombre' => 'Medicina'], // tambien en matias, usam
+            ['nombre' => 'Licenciatura en Anestesiología e Inhaloterapia'],
             ['nombre' => 'Doctorado en Cirugía Dental'], // usam
             ['nombre' => 'Licenciatura en Quimica y Farmacia'], // usam
             ['nombre' => 'Tecnico en Farmacia Asistencial'],

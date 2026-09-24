@@ -24,3 +24,4 @@ yarn-error.log
 /public/perfiles
 /public/uploads
 /public/files
+/storage/app/firebase/service-account.json

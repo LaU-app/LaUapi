@@ -17,9 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Agregar middleware para extender duración de sesión
+        $middleware->redirectGuestsTo(fn () => route('su.us.laulogin'));
         $middleware->web(append: [
             \App\Http\Middleware\ExtendSessionLifetime::class,
             \App\Http\Middleware\UpdateUserActivity::class,
+        ]);
+
+        // Agregar middleware CORS para rutas API
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

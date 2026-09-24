@@ -1,5 +1,3 @@
-
-
 <?php
 
 use App\Models\Comentario;
@@ -30,9 +28,9 @@ use App\Http\Controllers\ColaboradoresController;
  * Página principal de la aplicación
  * Muestra el feed principal con posts de usuarios
  */
-Route::get('/', HomeController::class)->name('home');
-
-// ============================================================================
+Route::get('/', function () {
+    return redirect()->route('su.us.laulogin');
+})->name('home');// ============================================================================
 // SISTEMA DE AUTENTICACIÓN
 // ============================================================================
 
@@ -40,16 +38,16 @@ Route::get('/', HomeController::class)->name('home');
  * REGISTRO DE USUARIOS
  * Formulario de registro y procesamiento de nuevos usuarios
  */
-Route::get('/register', [RegisterController::class, 'show'])->name('register');
-Route::post('/register', [RegisterController::class, 'store']);
-Route::post('/register/validate-step1', [RegisterController::class, 'validateStep1']);
+// Route::get('/register', [RegisterController::class, 'show'])->name('register');
+// Route::post('/register', [RegisterController::class, 'store']);
+// Route::post('/register/validate-step1', [RegisterController::class, 'validateStep1']);
 
 /**
  * INICIO DE SESIÓN
  * Formulario de login y autenticación de usuarios
  */
-Route::get('/login', [LoginController::class, 'index'])->name('login');
-Route::post('/login', [LoginController::class, 'store']);
+// Route::get('/login', [LoginController::class, 'index'])->name('login');
+// Route::post('/login', [LoginController::class, 'store']);
 
 /**
  * CIERRE DE SESIÓN
@@ -65,22 +63,22 @@ Route::post('/logout', [LogoutController::class, 'store'])->name('logout');
  * SOLICITUD DE RECUPERACIÓN
  * Formulario para solicitar código de recuperación por email
  */
-Route::get('/recuperar', [RecoverController::class, 'index'])->name('recuperar');
-Route::post('/recuperar', [RecoverController::class, 'enviarCodigo'])->name('recuperar.enviar');
+// Route::get('/recuperar', [RecoverController::class, 'index'])->name('recuperar');
+// Route::post('/recuperar', [RecoverController::class, 'enviarCodigo'])->name('recuperar.enviar');
 
 /**
  * VERIFICACIÓN DEL CÓDIGO
  * Formulario para ingresar el código de verificación enviado por email
  */
-Route::get('/code-verific', [RecoverController::class, 'index2'])->name('code.verific');
-Route::post('/code-verific', [RecoverController::class, 'validarCodigo'])->name('code.verification');
+// Route::get('/code-verific', [RecoverController::class, 'index2'])->name('code.verific');
+// Route::post('/code-verific', [RecoverController::class, 'validarCodigo'])->name('code.verification');
 
 /**
  * RESTABLECIMIENTO DE CONTRASEÑA
  * Formulario para establecer nueva contraseña tras verificación exitosa
  */
-Route::get('/restablecer', [RecoverController::class, 'index3'])->name('restablecer');
-Route::post('/restablecer', [RecoverController::class, 'restablecer'])->name('restablecer.verification');
+// Route::get('/restablecer', [RecoverController::class, 'index3'])->name('restablecer');
+// Route::post('/restablecer', [RecoverController::class, 'restablecer'])->name('restablecer.verification');
 
 // ============================================================================
 // GESTIÓN DE PERFILES Y USUARIOS
@@ -103,7 +101,7 @@ Route::patch('/social-links/{id}/move-up', [App\Http\Controllers\SocialLinksCont
 Route::patch('/social-links/{id}/move-down', [App\Http\Controllers\SocialLinksController::class, 'moveDown'])->name('social-links.move-down')->middleware('auth');
 
 /**
- * BÚSQUEDA DE USUARIOS
+ * BÚSQUEDA DE USUARIOS (PÚBLICA)
  * Sistema de búsqueda para encontrar otros usuarios de la plataforma
  */
 Route::get('/buscar-usuarios', [UserController::class, 'buscar'])->name('usuarios.buscar');
@@ -181,7 +179,6 @@ Route::get('/posts/{post}/likes', [PostController::class, 'getLikes'])->name('po
  * Permite comentar en las publicaciones de otros usuarios
  */
 Route::post('/{user:username}/posts/{post}', [ComentarioController::class, 'store'])->name('comentarios.store')->middleware('auth');
-//Route::post('/posts/{post}/comments', [ComentarioController::class, 'store'])->name('comentarios.store')->middleware('auth');
 
 // ============================================================================
 // GESTIÓN DE IMÁGENES
@@ -217,11 +214,11 @@ Route::post('/archivos', [ImagenController::class, 'storeArchivo'])->name('archi
  */
 Route::get('/archivos/{filename}', function ($filename) {
     $filePath = storage_path('app/public/archivos/' . $filename);
-    
+
     if (!file_exists($filePath)) {
         abort(404, 'Archivo no encontrado');
     }
-    
+
     return response()->download($filePath);
 })->name('archivos.download');
 
@@ -231,13 +228,13 @@ Route::get('/archivos/{filename}', function ($filename) {
  */
 Route::get('/archivos/preview/{filename}', function ($filename) {
     $filePath = storage_path('app/public/archivos/' . $filename);
-    
+
     if (!file_exists($filePath)) {
         abort(404, 'Archivo no encontrado');
     }
-    
+
     $mimeType = mime_content_type($filePath);
-    
+
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Content-Disposition' => 'inline; filename="' . $filename . '"'
@@ -290,33 +287,65 @@ Route::get('/itunes/genre', [iTunesApiController::class, 'searchByGenre'])->name
 Route::get('/itunes/popular', [iTunesApiController::class, 'getPopular'])->name('itunes.popular');
 Route::get('/itunes/more', [iTunesApiController::class, 'getMoreResults'])->name('itunes.more');
 
-/**
- * 
- * SU
- * 
- */
-// creador de usuario
-Route::post('/crear-usuario', [SUController::class, 'store'])->name('usuario.store');
 
-Route::post('/logoutus', [LogoutController::class, 'storeus'])->name('logoutus');
+// ============================================================================
+// SUPER USUARIO (SU) - PANEL DE ADMINISTRACIÓN
+// ============================================================================
 
+// Autenticación SU
+Route::get('/us/su/lau/login', [SUController::class, 'login'])->name('su.us.laulogin');
+Route::post('/us/su/lau/session', [SUController::class, 'storelau'])->name('su.us.lausess');
+Route::post('/logoutus', [SUController::class, 'storeus'])->name('logoutus');
+
+// Grupo protegido por Middleware de SU
 Route::middleware(['auth:super'])
-    ->prefix('us')
+    ->prefix('us/su/lau')
     ->as('su.')
     ->group(function () {
+
+        // Vistas Generales
         Route::get('/dashboard', [SUController::class, 'dashboard'])->name('dash');
 
+        Route::get('/universidades', [SUController::class, 'universidad'])->name('uni');
+        Route::post('/universidades', [SUController::class, 'storeuni'])->name('uni.store');
+        Route::put('/universidades/{id}', [SUController::class, 'updateUni'])->name('uni.update');
+
+        Route::get('/carreras', [SUController::class, 'carrera'])->name('uni.ca');
+        // Ruta para crear la carrera en el catálogo (Botón Superior)
+        Route::post('/carreras/crear', [SUController::class, 'storeCarrera'])->name('ca.store');
+
+        // Ruta para vincular la carrera a la universidad (Botón Interno)
+        Route::post('/carreras/vincular', [SUController::class, 'assignCarrera'])->name('ca.assign');
+
+
+        // Gestión de Usuarios SU
+        Route::get('/usuarios', [SUController::class, 'userperfil'])->name('usuarios');
+        Route::get('/buscar-usuarios', [SUController::class, 'buscarUsuarios'])->name('user.buscar');
         Route::get('/info/{user:username}', [SUController::class, 'info'])->name('info');
-        Route::post('/info/{user:username}/insignia', [SUController::class, 'addInsignia'])->name('add.insig');
+        Route::get('/reportes', [SUController::class, 'reportes'])->name('reportes');
+
+        Route::delete('/usuarios/{id}', [SUController::class, 'destroy'])->name('user.destroy');
+
+        // Gestión de Insignias
+        Route::get('/insignias', [SUController::class, 'insig'])->name('insig');
+        Route::post('/insignias/create', [SUController::class, 'storeinsig'])->name('insig.create');
+        Route::post('/users/insignia', [SUController::class, 'addInsignia'])->name('add.insig');
         Route::put('/info/{user:username}/insignia', [SUController::class, 'editInsignia'])->name('update.insig');
         Route::delete('/info/{user:username}/insignia', [SUController::class, 'deleteInsignia'])->name('delete.insig');
 
+        // Gestión de Anuncios (Banners)
         Route::get('/ads/create', [SUController::class, 'ads'])->name('ads');
         Route::post('/ads/create', [SUController::class, 'create'])->name('ads.create');
+        Route::put('/ads/update/{id}', [SUController::class, 'update'])->name('ads.update');
+        Route::delete('/ads/{id}', [SUController::class, 'delete'])->name('ads.delete');
 
-        Route::get('/insig/create', [SUController::class, 'insig'])->name('insig');
+        Route::post('/ads/{id}/reset-views', [SUController::class, 'resetViews'])->name('ads.resetviews');
 
-        Route::get('/buscar-userus', [UserController::class, 'buscarUsuarios'])->name('user.buscar');
+        // Gestion de actualización app
+        Route::get('/updates', [SUController::class, 'updateindex'])->name('updates.index');
+        Route::post('/updates', [SUController::class, 'storeup'])->name('updates.store');
+        Route::patch('/updates/{id}/activate', [SUController::class, 'activateup'])->name('updates.activate');
+        Route::delete('/updates/{id}', [SUController::class, 'destroyup'])->name('updates.destroy');
     });
 
 

@@ -15,4 +15,9 @@ class Carrera extends Model
     {
         return $this->belongsToMany(Universidad::class, 'carrera_universidades');
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'carrera_id');
+    }
 }

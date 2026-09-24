@@ -15,6 +15,7 @@ class Post extends Model
         'titulo',
         'descripcion',
         'imagen',
+        'imagen_mini',
         'archivo',
         'archivo_nombre_original',
         'user_id',
@@ -40,6 +41,14 @@ class Post extends Model
         // Campo de solo texto
         'texto'
     ];
+
+    /**
+     * Accesor para obtener la URL de la miniatura o caer de vuelta a la original
+     */
+    public function getImagenFeedUrlAttribute()
+    {
+        return $this->imagen_mini ? $this->imagen_mini : $this->imagen;
+    }
 
     public function user()
     {

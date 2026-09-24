@@ -74,6 +74,7 @@ class CommentController extends Controller
             ]);
 
             $parentId = $request->input('parent_id', null);
+            $parent = null;
 
             DB::beginTransaction();
 
@@ -82,6 +83,7 @@ class CommentController extends Controller
             // Si es una respuesta a otro comentario, valido y calculo la profundidad
             if ($parentId !== null) {
                 // Bloqueo la fila padre para evitar race conditions
+                // Usamos la relación 'parent' si está definida en el modelo, o la consulta directa:
                 $parent = Comentario::where('id', $parentId)->lockForUpdate()->first();
 
                 if (!$parent) {
@@ -124,16 +126,34 @@ class CommentController extends Controller
             }
 
             DB::commit();
-
-            // Creo notificación solo si no es el dueño del post quien comenta
-            if ($post->user_id !== Auth::id()) {
-                $this->notificationService->createCommentNotification(
-                    Auth::user(),
-                    $post,
-                    $request->comentario
-                );
+            
+            // ------------------------------------------------------------------
+            // LÓGICA DE NOTIFICACIONES
+            // ------------------------------------------------------------------
+            if ($parentId !== null) {
+                // 1. Es una respuesta: Notificar al autor del comentario padre
+                if ($parent && $parent->user_id !== Auth::id()) {
+                    // Cargar el usuario del comentario padre si no está cargado.
+                    $parent->loadMissing('user');
+                    
+                    // Usamos un nuevo método para notificaciones de respuesta
+                    $this->notificationService->createCommentReplyNotification(
+                        Auth::user(),
+                        $parent, // El comentario al que se responde
+                        $comentario, // La nueva respuesta
+                        $post // La publicación
+                    );
+                }
+            } else {
+                // 2. Es un comentario de nivel superior: Notificar al dueño de la publicación
+                if ($post->user_id !== Auth::id()) {
+                    $this->notificationService->createCommentNotification(
+                        Auth::user(),
+                        $post,
+                        $request->comentario
+                    );
+                }
             }
-
             // Cargo las relaciones para la respuesta
             $comentario->load(['user', 'children']);
 

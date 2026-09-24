@@ -1,36 +1,64 @@
-<div class="flex flex-col items-center w-full">
-    @if ($users->count())
+<div class="flex flex-col w-full space-y-1">
+    @if (isset($users) && $users->count())
         @foreach ($users as $user)
-            <div class="w-full mx-auto mb-3 bg-white shadow-sm rounded-xl sm:mb-4"
-                data-user-id="{{ $user->id }}">
-                <div class="flex items-center justify-between p-3">
-                    <a href="{{ route('su.info', $user) }}" class="flex items-center flex-1 group">
-                        <div class="relative">
-                            <img src="{{ $user->imagen ? asset('perfiles/' . $user->imagen) : asset('img/img.jpg') }}"
-                                alt="Avatar de {{ $user->username }}"
-                                class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-transparent group-hover:border-[#3B25DD] transition">
-                        </div>
-                        <div class="ml-3 sm:ml-4">
-                            <h3
-                                class="font-semibold text-gray-900 text-sm sm:text-base group-hover:border-[#3B25DD] transition">
-                                <div class="flex items-center gap-1 min-h-5">
-                                    <span>{{ $user->name ?? $user->username }}</span>
-                                    <x-user-badge :badge="$user->insignia" size="small" />
-                                </div>
-                            </h3>
-                            <p class="text-xs text-gray-500 sm:text-sm">
-                                {{ $user->profession ?? 'Usuario de muestra' }}</p>
-                        </div>
-                    </a>
+            {{-- Lógica para el estado Activo/Inactivo: El primero sale activo por defecto --}}
+            @php
+                $activeClass = 'bg-indigo-50 dark:bg-indigo-900/30 border-l-4 border-indigo-600';
+                $inactiveClass = 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent hover:border-gray-300';
+                $currentClass = $loop->first ? $activeClass : $inactiveClass;
+                
+                // Texto de profesión o default
+                $profession = $user->profession ?? 'Sin profesión';
+                
+                // Imagen de perfil
+                $imageSrc = $user->imagen ? asset('perfiles/' . $user->imagen) : "https://ui-avatars.com/api/?name=".urlencode($user->name)."&background=random";
+            @endphp
 
-                    <div class="flex-shrink-0">
-                       <a href=""><i class='bx bx-dots-horizontal-rounded text-black text-[25px]' ></i></a>
-                    </div>
-
+            <button 
+                onclick="showUser('{{ $user->id }}')" 
+                id="btn-{{ $user->id }}" 
+                class="user-btn w-full flex items-center p-3 rounded-lg transition-all group {{ $currentClass }}">
+                
+                {{-- Sección de Imagen --}}
+                <div class="relative mr-3">
+                    <img src="{{ $imageSrc }}" 
+                         alt="Avatar de {{ $user->name }}" 
+                         class="h-10 w-10 rounded-full object-cover">
+                    
+                    {{-- Indicador de estado (puedes añadir lógica si tienes campo 'online') --}}
+                    <span class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-gray-800 bg-green-400"></span>
                 </div>
-            </div>
+
+                {{-- Sección de Texto --}}
+                <div class="text-left flex-1 min-w-0">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-gray-900 dark:text-white truncate">
+                            {{ $user->name ?? $user->username }}
+                        </h4>
+                        
+                        {{-- Tiempo (Opcional: usa diffForHumans si tienes created_at o last_seen) --}}
+                        <span class="text-[10px] text-gray-400">
+                            Hace 2m
+                        </span>
+                    </div>
+                    
+                    <p id="text-{{ $user->id }}" 
+                        class="user-role-text text-xs truncate transition-colors group-hover:text-indigo-600 
+                        {{ $loop->first ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500' }}">
+                       {{-- Muestra: "Ing. Sistemas - UES" o "Sin Información" --}}
+                        @if($user->carrera && $user->universidad)
+                            {{ $user->carrera->nombre }}
+                        @else
+                            Información académica no disponible
+                        @endif
+                    </p>
+                </div>
+            </button>
         @endforeach
     @else
-        <p class="p-4 mb-5 text-xs text-center text-gray-500 sm:text-sm">No se ha encontrado ningún perfil.</p>
+        {{-- Estado Vacío --}}
+        <div class="p-4 text-center">
+            <p class="text-sm text-gray-500">No se encontraron perfiles.</p>
+        </div>
     @endif
 </div>

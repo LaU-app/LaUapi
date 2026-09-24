@@ -14,7 +14,8 @@ class CarreraUniversidadSeeder extends Seeder
      */
     public function run(): void
     {
-        // Obtener los IDs de universidades
+        // 1. Obtener Universidades (con validación)
+        // Se usa first() para obtener el modelo o null si no existe.
         $ues = Universidad::where('nombre', 'Universidad de El Salvador')->first();
         $uca = Universidad::where('nombre', 'Universidad Centroamericana José Simeón Cañas')->first();
         $utec = Universidad::where('nombre', 'Universidad Tecnológica de El Salvador')->first();
@@ -25,7 +26,9 @@ class CarreraUniversidadSeeder extends Seeder
         $matias = Universidad::where('nombre', 'Universidad Doctor José Matías Delgado')->first();
         $uab = Universidad::where('nombre', 'Universidad Dr. Andrés Bello')->first();
         $usam = Universidad::where('nombre', 'Universidad Salvadoreña Alberto Masferrer')->first();
-        // obtener Ids de carreras
+
+        // 2. Obtener Ids de carreras (Cargamos todas para usarlas abajo)
+        // NOTA: Si alguna no existe, la variable será null.
         $enmate = Carrera::where('nombre', 'Licenciatura en Enseñanza de la Matemática')->first();
         $mate = Carrera::where('nombre', 'Licenciatura en Matemática')->first();
         $estadistica = Carrera::where('nombre', 'Licenciatura en Estadistica y Ciencia de Datos')->first();
@@ -56,6 +59,7 @@ class CarreraUniversidadSeeder extends Seeder
         $relaciones = Carrera::where('nombre', 'Licenciatura en Relaciones internacionales')->first();
         $cienciap = Carrera::where('nombre', 'Licenciatura en Ciencia Politica')->first();
         $medicina = Carrera::where('nombre', 'Medicina')->first();
+        $anestesiologia = Carrera::where('nombre', 'Licenciatura en Anestesiología e Inhaloterapia')->first();
         $odonto = Carrera::where('nombre', 'Doctorado en Cirugía Dental')->first();
         $farmacia = Carrera::where('nombre', 'Licenciatura en Quimica y Farmacia')->first();
         $tecfarmacia = Carrera::where('nombre', 'Tecnico en Farmacia Asistencial')->first();
@@ -194,44 +198,134 @@ class CarreraUniversidadSeeder extends Seeder
         $opto = Carrera::where('nombre', 'Licenciatura en Optometría')->first();
         $tecopto = Carrera::where('nombre', 'Técnico en Optometría')->first();
 
-        // Relaciones de muchos a muchos
-        $ues->carreras()->attach([$enmate->id, $mate->id, $estadistica->id, $pmate->id, $enciencias->id, $vete->id, $agroindustria->id, $geologia->id, $agronomica->id, $conta->id,
-            $administracion->id, $mercadeo->id, $economia->id, $fisica->id, $geofisica->id, $licquimica->id, $biologia->id, $biologiem->id, $arquitectura->id, $civil->id, $electrica->id,
-            $industrial->id, $sistemas->id, $mecanica->id, $alimentos->id, $quimica->id, $derecho->id, $relaciones->id, $cienciap->id, $medicina->id, $odonto->id, $farmacia->id, $tecfarmacia->id]);
+        // 3. Relaciones con Validación (Para evitar errores de null)
 
-        $uca->carreras()->attach([$tecsoftware->id, $energetica->id, $informatica->id, $cienciass->id, $filosofia->id, $ingles->id, $psicologia->id, $teologia->id, $tecmarketing->id,
-            $tecmulti->id, $tecmerca->id, $comunicacions->id, $diseno->id, $pingles->id, $pteologia->id, $tecconta->id, $finanzas->id, $conta->id, $administracion->id, $economia->id, 
-            $arquitectura->id, $civil->id,$electrica->id, $industrial->id, $mecanica->id, $alimentos->id, $quimica->id, $derecho->id]);
+        // --- UES ---
+        if ($ues) {
+            $carrerasUes = [
+                $enmate, $mate, $estadistica, $pmate, $enciencias, $vete, $agroindustria, 
+                $geologia, $agronomica, $conta, $administracion, $mercadeo, $economia, 
+                $fisica, $geofisica, $licquimica, $biologia, $biologiem, $arquitectura, 
+                $civil, $electrica, $industrial, $sistemas, $mecanica, $alimentos, 
+                $quimica, $derecho, $relaciones, $cienciap, $medicina, $odonto, $farmacia, $tecfarmacia, $anestesiologia
+            ];
+            $ues->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUes));
+        }
 
-        $utec->carreras()->attach([$disenog->id, $forense->id, $tecexport->id, $tecredes->id, $tecdisenog->id, $tecauto->id, $tecrela->id, $tecadmin->id, $tecciber->id, $teclogis->id,
-            $licinfor->id, $terservi->id, $tecnegocios->id, $teccomu->id, $pingles->id, $comunicacions->id, $tecmerca->id, $tecmulti->id, $tecmarketing->id, $psicologia->id, $ingles->id,
-            $tecsoftware->id, $derecho->id, $sistemas->id, $industrial->id, $arquitectura->id, $mercadeo->id, $administracion->id, $conta->id]);
+        // --- UCA ---
+        if ($uca) {
+            $carrerasUca = [
+                $tecsoftware, $energetica, $informatica, $cienciass, $filosofia, $ingles, 
+                $psicologia, $teologia, $tecmarketing, $tecmulti, $tecmerca, $comunicacions, 
+                $diseno, $pingles, $pteologia, $tecconta, $finanzas, $conta, $administracion, 
+                $economia, $arquitectura, $civil, $electrica, $industrial, $mecanica, 
+                $alimentos, $quimica, $derecho
+            ];
+            $uca->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUca));
+        }
 
-        $udb->carreras()->attach([$biomedi->id, $computacion->id, $mecatronica->id, $aero->id, $electronica->id, $tele->id, $idiomas->id, $idiomast->id, $disenoi->id, $marketing->id, 
-            $tecmeca->id, $tecelec->id, $tecelectro->id, $tecbio->id, $teccompu->id, $teccontrol->id, $tecaero->id, $tecprote->id, $tecturi->id, $tecfinan->id, $tecgestion->id, $tecdisenog->id, 
-            $disenog->id, $pteologia->id, $comunicacions->id, $tecmulti->id, $teologia->id, $mecanica->id, $industrial->id, $electrica->id, $administracion->id, $conta->id]);
+        // --- UTEC ---
+        if ($utec) {
+            $carrerasUtec = [
+                $disenog, $forense, $tecexport, $tecredes, $tecdisenog, $tecauto, $tecrela, 
+                $tecadmin, $tecciber, $teclogis, $licinfor, $terservi, $tecnegocios, $teccomu, 
+                $pingles, $comunicacions, $tecmerca, $tecmulti, $tecmarketing, $psicologia, 
+                $ingles, $tecsoftware, $derecho, $sistemas, $industrial, $arquitectura, 
+                $mercadeo, $administracion, $conta
+            ];
+            $utec->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUtec));
+        }
 
-        $ugb->carreras()->attach([$tecingles->id, $tecindustrial->id, $ingnegocios->id, $software->id, $redesi->id, $enfermeria->id, $teccivil->id, $educacion->id, $peducacion->id, $plenguaje->id, 
-            $pidioma->id, $marketing->id, $tecdisenog->id, $comunicacions->id, $tecmarketing->id, $psicologia->id, $ingles->id, $relaciones->id, $sistemas->id, $industrial->id, $electrica->id, $civil->id, 
-            $arquitectura->id, $tecenfermeria->id, $administracion->id, $conta->id, $agroindustria->id, $pmate->id]);
-    
-        $ufg->carreras()->attach([$animacion->id, $disenom->id, $tecanimacion->id, $tecdecoracion->id, $controle->id, $videojuegos->id, $ia->id, $sistemasc->id, $ingtele->id, $licsistemas->id, 
-            $tecsistemas->id, $admturist->id, $comunicacionc->id, $gestionh->id, $mercadotecnia->id, $licsistemasc->id, $tecadminr->id, $tecguiat->id, $tecpubli->id, $tecventas->id, $atencion->id, $trabajo->id, 
-            $software->id, $tecdisenog->id, $forense->id, $tecconta->id, $psicologia->id, $ingles->id, $cienciap->id, $relaciones->id, $derecho->id, $industrial->id, $arquitectura->id, $economia->id, $administracion->id, $conta->id]);
+        // --- UDB ---
+        if ($udb) {
+            $carrerasUdb = [
+                $biomedi, $computacion, $mecatronica, $aero, $electronica, $tele, $idiomas, 
+                $idiomast, $disenoi, $marketing, $tecmeca, $tecelec, $tecelectro, $tecbio, 
+                $teccompu, $teccontrol, $tecaero, $tecprote, $tecturi, $tecfinan, $tecgestion, 
+                $tecdisenog, $disenog, $pteologia, $comunicacions, $tecmulti, $teologia, 
+                $mecanica, $industrial, $electrica, $administracion, $conta
+            ];
+            $udb->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUdb));
+        }
 
-        $itca->carreras()->attach([$tecciv->id, $gastro->id, $tecmecam->id, $teclab->id, $tecempresas->id, $tecmecae->id, $tecenergia->id, $tecinfor->id, $tecarqui->id, $tecmecac->id, 
-            $tecquimica->id, $tecinfra->id, $tecmecat->id, $techardware->id, $tecmanu->id, $software->id, $tecindustrial->id, $tecelectro->id, $electronica->id, $mecatronica->id, $tecsoftware->id, $electrica->id, 
-            $techosteleria->id, $logistica->id, $teclogis->id]);
+        // --- UGB ---
+        if ($ugb) {
+            $carrerasUgb = [
+                $tecingles, $tecindustrial, $ingnegocios, $software, $redesi, $enfermeria, 
+                $teccivil, $educacion, $peducacion, $plenguaje, $pidioma, $marketing, 
+                $tecdisenog, $comunicacions, $tecmarketing, $psicologia, $ingles, $relaciones, 
+                $sistemas, $industrial, $electrica, $civil, $arquitectura, $tecenfermeria, 
+                $administracion, $conta, $agroindustria, $pmate
+            ];
+            $ugb->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUgb));
+        }
 
-        $matias->carreras()->attach([$gestiont->id, $turismo->id, $cienciasc->id, $disenop->id, $arquiint->id, $innovacion->id, $logisticad->id, $agrobio->id, $gestiona->id, $musica->id, 
-            $tecartes->id, $enfermeria->id, $marketing->id, $electronica->id, $disenog->id, $finanzas->id, $psicologia->id, $medicina->id, $relaciones->id, $derecho->id, $alimentos->id, $industrial->id,
-            $arquitectura->id, $economia->id, $administracion->id, $conta->id, $agroindustria->id]);
+        // --- UFG ---
+        if ($ufg) {
+            $carrerasUfg = [
+                $animacion, $disenom, $tecanimacion, $tecdecoracion, $controle, $videojuegos, 
+                $ia, $sistemasc, $ingtele, $licsistemas, $tecsistemas, $admturist, $comunicacionc, 
+                $gestionh, $mercadotecnia, $licsistemasc, $tecadminr, $tecguiat, $tecpubli, 
+                $tecventas, $atencion, $trabajo, $software, $tecdisenog, $forense, $tecconta, 
+                $psicologia, $ingles, $cienciap, $relaciones, $derecho, $industrial, $arquitectura, 
+                $economia, $administracion, $conta
+            ];
+            $ufg->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUfg));
+        }
 
-        $uab->carreras()->attach([$relap->id, $gestionturi->id, $tect->id, $tecsal->id, $tecriesgos->id, $sistemasyc->id, $compg->id, $labocli->id, $radio->id, $nutri->id, 
-            $opto->id, $tecopto->id, $trabajo->id, $tecenfermeria->id, $enfermeria->id, $teccompu->id, $tecdisenog->id, $disenog->id, $tecconta->id, $comunicacions->id, $tecmerca->id, $tecmarketing->id, 
-            $psicologia->id, $ingles->id, $derecho->id, $conta->id, $administracion->id, $agroindustria->id]);
+        // --- ITCA ---
+        if ($itca) {
+            $carrerasItca = [
+                $tecciv, $gastro, $tecmecam, $teclab, $tecempresas, $tecmecae, $tecenergia, 
+                $tecinfor, $tecarqui, $tecmecac, $tecquimica, $tecinfra, $tecmecat, $techardware, 
+                $tecmanu, $software, $tecindustrial, $tecelectro, $electronica, $mecatronica, 
+                $tecsoftware, $electrica, $techosteleria, $logistica, $teclogis
+            ];
+            $itca->carreras()->syncWithoutDetaching($this->extraerIds($carrerasItca));
+        }
 
-        $usam->carreras()->attach([$tecpubli->id, $tecsistemas->id, $licsistemas->id, $enfermeria->id, $computacion->id, $tecredes->id, $comunicacions->id, $tecmarketing->id, $tecsoftware->id, $quimica->id, 
-            $odonto->id, $medicina->id, $derecho->id, $mercadeo->id, $administracion->id, $conta->id, $vete->id]);
+        // --- MATIAS ---
+        if ($matias) {
+            $carrerasMatias = [
+                $gestiont, $turismo, $cienciasc, $disenop, $arquiint, $innovacion, $logisticad, 
+                $agrobio, $gestiona, $musica, $tecartes, $enfermeria, $marketing, $electronica, 
+                $disenog, $finanzas, $psicologia, $medicina, $relaciones, $derecho, $alimentos, 
+                $industrial, $arquitectura, $economia, $administracion, $conta, $agroindustria
+            ];
+            $matias->carreras()->syncWithoutDetaching($this->extraerIds($carrerasMatias));
+        }
+
+        // --- UAB ---
+        if ($uab) {
+            $carrerasUab = [
+                $relap, $gestionturi, $tect, $tecsal, $tecriesgos, $sistemasyc, $compg, 
+                $labocli, $radio, $nutri, $opto, $tecopto, $trabajo, $tecenfermeria, 
+                $enfermeria, $teccompu, $tecdisenog, $disenog, $tecconta, $comunicacions, 
+                $tecmerca, $tecmarketing, $psicologia, $ingles, $derecho, $conta, 
+                $administracion, $agroindustria
+            ];
+            $uab->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUab));
+        }
+
+        // --- USAM ---
+        if ($usam) {
+            $carrerasUsam = [
+                $tecpubli, $tecsistemas, $licsistemas, $enfermeria, $computacion, $tecredes, 
+                $comunicacions, $tecmarketing, $tecsoftware, $quimica, $odonto, $medicina, 
+                $derecho, $mercadeo, $administracion, $conta, $vete
+            ];
+            $usam->carreras()->syncWithoutDetaching($this->extraerIds($carrerasUsam));
+        }
+    }
+
+    /**
+     * Método auxiliar para extraer solo los IDs válidos de un array de modelos (o nulls)
+     */
+    private function extraerIds(array $modelos): array
+    {
+        return collect($modelos)
+            ->filter() // Elimina los null (si no se encontró la carrera)
+            ->pluck('id') // Extrae el ID
+            ->toArray();
     }
 }
