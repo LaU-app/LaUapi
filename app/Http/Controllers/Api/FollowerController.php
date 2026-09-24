@@ -63,8 +63,12 @@ class FollowerController extends Controller
             // El usuario autenticado sigue al usuario recibido
             $user->followers()->attach($authUser->id);
 
-            // Crear notificación
-            $this->notificationService->createFollowNotification($authUser, $user);
+            // La relación ya está guardada: un fallo al notificar no debe convertirla en un error de seguimiento.
+            try {
+                $this->notificationService->createFollowNotification($authUser, $user);
+            } catch (\Throwable $notificationError) {
+                report($notificationError);
+            }
 
             // Obtener contadores actualizados
             $followersCount = $user->followers()->count();
@@ -194,8 +198,11 @@ class FollowerController extends Controller
                 // Seguir
                 $user->followers()->attach($authUser->id);
 
-                // Crear notificación
-                $this->notificationService->createFollowNotification($authUser, $user);
+                try {
+                    $this->notificationService->createFollowNotification($authUser, $user);
+                } catch (\Throwable $notificationError) {
+                    report($notificationError);
+                }
 
                 $message = 'Ahora sigues a este usuario.';
                 $action = 'followed';

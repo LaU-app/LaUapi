@@ -3,186 +3,162 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Task;
+use App\Models\User;
+use App\Services\StudyRealtime;
+use App\Services\StudyStatistics;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
-    /**
-     * Listar todas las tareas del usuario autenticado
-     */
+    private function respond($data)
+    {
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    private function validateTask(Request $request, bool $creating): array
+    {
+        return $request->validate([
+            'uuid_cliente' => $creating ? 'sometimes|uuid' : 'prohibited',
+            'title' => ($creating ? 'required' : 'sometimes|required').'|string|max:255',
+            'description' => 'nullable|string|max:10000',
+            'priority' => ['sometimes', Rule::in(['low', 'medium', 'high'])],
+            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
+            'due_date' => 'nullable|date',
+            'estimated_pomodoros' => 'nullable|integer|between:1,100',
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $query = $request->user()->tasks();
+        $data = $request->validate([
+            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
+            'priority' => ['sometimes', Rule::in(['low', 'medium', 'high'])],
+            'search' => 'sometimes|string|max:255',
+            'sort_by' => ['sometimes', Rule::in(['created_at', 'due_date', 'priority', 'title'])],
+            'sort_order' => ['sometimes', Rule::in(['asc', 'desc'])],
+            'overdue' => 'sometimes|in:true,false,1,0',
+            'page' => 'sometimes|integer|min:1',
+        ]);
 
-        // Filtros opcionales
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        $query = $request->user()->tasks()->withProgress();
+
+        foreach (['status', 'priority'] as $field) {
+            if (isset($data[$field])) {
+                $query->where($field, $data[$field]);
+            }
         }
 
-        if ($request->has('priority')) {
-            $query->where('priority', $request->priority);
+        if (isset($data['search'])) {
+            $query->where('title', 'like', '%'.$data['search'].'%');
         }
 
         if ($request->boolean('overdue')) {
             $query->where('due_date', '<', now())
-                ->whereIn('status', ['pending', 'in_progress']);
+                ->whereNotIn('status', ['completed', 'cancelled']);
         }
 
-        // Ordenamiento
-        $sortBy = $request->input('sort_by', 'created_at');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $sortBy = $data['sort_by'] ?? 'created_at';
+        $sortOrder = $data['sort_order'] ?? 'desc';
 
         if ($sortBy === 'priority') {
-            $query->orderByPriority();
-        } elseif ($sortBy === 'due_date') {
-            $query->orderByDueDate();
+            $query->orderByRaw(
+                "CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END {$sortOrder}"
+            );
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
 
-        $tasks = $query->with('pomodoroSessions')->paginate(20);
-
-        return response()->json([
-            'success' => true,
-            'data' => $tasks,
-        ], 200);
+        return $this->respond($query->orderBy('id')->paginate(20));
     }
 
-    /**
-     * Crear una nueva tarea
-     */
-    public function store(Request $request)
+    public function store(Request $request, StudyRealtime $realtime)
     {
-        $validated = $request->validate([
-            'uuid_cliente' => 'nullable|uuid',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'priority' => ['nullable', Rule::in(['low', 'medium', 'high'])],
-            'due_date' => 'nullable|date',
-            'estimated_pomodoros' => 'nullable|integer|min:1',
-        ]);
+        $data = $this->validateTask($request, true);
+        $data['uuid_cliente'] = $data['uuid_cliente'] ?? (string) Str::uuid();
 
-        // Generar UUID si no viene del cliente
-        if (!isset($validated['uuid_cliente'])) {
-            $validated['uuid_cliente'] = (string) Str::uuid();
-        }
+        $task = DB::transaction(function () use ($request, $data) {
+            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-        $validated['user_id'] = $request->user()->id;
+            return $request->user()->tasks()->firstOrCreate(
+                ['uuid_cliente' => $data['uuid_cliente']],
+                $data
+            );
+        });
 
-        $task = Task::create($validated);
+        $realtime->notify($request->user(), ['tasks', 'stats']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tarea creada exitosamente',
-            'data' => $task,
-        ], 201);
+        return $this->respond($task->fresh()->loadCount([
+            'pomodoroSessions as completed_pomodoros' => fn ($q) => $q->where('status', 'completed'),
+        ]));
     }
 
-    /**
-     * Ver una tarea específica
-     */
-    public function show(Request $request, Task $task)
+    public function show(Request $request, int $task)
     {
-        // Verificar que la tarea pertenezca al usuario
-        if ($task->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para ver esta tarea',
-            ], 403);
-        }
+        $record = $request->user()->tasks()->withProgress()->findOrFail($task);
 
-        $task->load('pomodoroSessions');
+        $record->setRelation(
+            'pomodoroSessions',
+            $record->pomodoroSessions()->latest()->limit(20)->get()
+        );
 
-        return response()->json([
-            'success' => true,
-            'data' => $task,
-        ], 200);
+        return $this->respond($record);
     }
 
-    /**
-     * Actualizar una tarea
-     */
-    public function update(Request $request, Task $task)
+    public function update(Request $request, int $task, StudyRealtime $realtime)
     {
-        // Verificar que la tarea pertenezca al usuario
-        if ($task->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para actualizar esta tarea',
-            ], 403);
-        }
+        $data = $this->validateTask($request, false);
 
-        $validated = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'priority' => ['sometimes', Rule::in(['low', 'medium', 'high'])],
-            'due_date' => 'nullable|date',
-            'estimated_pomodoros' => 'nullable|integer|min:1',
-        ]);
+        $record = DB::transaction(function () use ($request, $task, $data) {
+            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-        // Si se marca como completada, agregar timestamp
-        if (isset($validated['status']) && $validated['status'] === 'completed' && $task->status !== 'completed') {
-            $validated['completed_at'] = now();
-        }
+            $record = $request->user()->tasks()->findOrFail($task);
 
-        $task->update($validated);
+            if (isset($data['status'])) {
+                $data['completed_at'] = $data['status'] === 'completed' ? now() : null;
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tarea actualizada exitosamente',
-            'data' => $task->fresh(),
-        ], 200);
+            $record->update($data);
+
+            return $request->user()->tasks()->withProgress()->findOrFail($task);
+        });
+
+        $realtime->notify($request->user(), ['tasks', 'stats']);
+
+        return $this->respond($record);
     }
 
-    /**
-     * Eliminar una tarea
-     */
-    public function destroy(Request $request, Task $task)
+    public function destroy(Request $request, int $task, StudyRealtime $realtime)
     {
-        // Verificar que la tarea pertenezca al usuario
-        if ($task->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para eliminar esta tarea',
-            ], 403);
-        }
+        $request->user()->tasks()->findOrFail($task)->delete();
+        $realtime->notify($request->user(), ['tasks', 'stats']);
 
-        $task->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tarea eliminada exitosamente',
-        ], 200);
+        return $this->respond(null);
     }
 
-    /**
-     * Obtener estadísticas de tareas del usuario
-     */
-    public function stats(Request $request)
+    public function stats(Request $request, StudyStatistics $study)
     {
         $user = $request->user();
 
-        $stats = [
+        $counts = $user->tasks()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $summary = $study->summary($user);
+
+        return $this->respond([
+            ...array_fill_keys(['pending', 'in_progress', 'completed', 'cancelled'], 0),
+            ...$counts->all(),
+            ...$summary,
             'total' => $user->tasks()->count(),
-            'pending' => $user->tasks()->pending()->count(),
-            'in_progress' => $user->tasks()->inProgress()->count(),
-            'completed' => $user->tasks()->completed()->count(),
+            'total_pomodoros' => $summary['pomodoros_completed'],
             'overdue' => $user->tasks()
                 ->where('due_date', '<', now())
-                ->whereIn('status', ['pending', 'in_progress'])
+                ->whereNotIn('status', ['completed', 'cancelled'])
                 ->count(),
-            'total_pomodoros' => $user->pomodoroSessions()->completed()->count(),
-            'pomodoros_today' => $user->pomodoroSessions()->completed()->today()->count(),
-            'pomodoros_this_week' => $user->pomodoroSessions()->completed()->thisWeek()->count(),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ], 200);
+        ]);
     }
 }
