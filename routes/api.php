@@ -44,6 +44,22 @@ Route::get('/music/popular', [MusicSearchController::class, 'getPopular']);
 
 // Rutas protegidas (requieren autenticación con token Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/realtime/auth', \App\Http\Controllers\Api\RealtimeAuthController::class);
+    Route::get('/tasks-stats', [\App\Http\Controllers\Api\TaskController::class, 'stats']);
+    Route::apiResource('tasks', \App\Http\Controllers\Api\TaskController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+
+    Route::prefix('pomodoro')->controller(\App\Http\Controllers\Api\StudyController::class)->group(function () {
+        Route::get('preferences', 'preferences');
+        Route::put('preferences', 'updatePreferences');
+        Route::post('start', 'start');
+        Route::post('complete', 'finish');
+        Route::post('cancel', 'cancel');
+        Route::get('active', 'active');
+        Route::get('sessions', 'history');
+        Route::get('stats', 'stats');
+        Route::get('leaderboard', 'leaderboard');
+    });
+
     // Autenticación
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);

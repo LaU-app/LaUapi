@@ -221,4 +221,8 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Carrera::class);
     }
+
+    public function tasks() { return $this->hasMany(Task::class); }
+    public function studySessions() { return $this->hasMany(StudySession::class); }
+    public function studyPreference() { return $this->hasOne(StudyPreference::class); }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Controlador de Usuarios para la API de SivarSocial
@@ -25,6 +26,8 @@ class UserController extends Controller
             // Incluyo universidad_id y carrera_id para cargar las relaciones
             $users = User::with(['universidad', 'carrera'])
                 ->select(['id', 'name', 'username', 'imagen', 'insignia', 'universidad_id', 'carrera_id'])
+                ->withCount('followers')
+                ->withExists(['followers as is_following' => fn ($query) => $query->where('follower_id', Auth::id())])
                 ->paginate(20); // Pagino de 20 en 20 para no sobrecargar la app
 
             // Transformo cada usuario para agregar la URL completa de la imagen de perfil  
