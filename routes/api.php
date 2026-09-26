@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\PomodoroController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\AppUpdateController;
+use App\Http\Controllers\Api\PollController;
+use App\Http\Controllers\Api\PollVoteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +46,10 @@ Route::get('/posts', [PostController::class, 'index']);
 Route::get('/posts/{post}', [PostController::class, 'show']);
 Route::post('/posts/filter', [PostController::class, 'filtropost']);
 Route::get('/posts/user/{userId}', [PostController::class, 'userPosts']);
+
+// Encuestas públicas (solo lectura)
+Route::get('/polls', [PollController::class, 'index']);
+Route::get('/polls/{poll}', [PollController::class, 'show']);
 
 // Búsqueda de música iTunes (público)
 Route::get('/music/search', [MusicSearchController::class, 'search']);
@@ -150,6 +156,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/banners/active', [BannerController::class, 'getActive']);
 
     Route::post('/banners/{banner}/view', [BannerController::class, 'markViewed']);
+
+    // ========== ENCUESTAS (POLLS) ROUTES ==========
+    Route::post('/polls', [PollController::class, 'store']); // Crear encuesta
+    Route::delete('/polls/{poll}', [PollController::class, 'destroy']); // Eliminar encuesta (solo dueño)
+    Route::post('/polls/{poll}/vote', [PollVoteController::class, 'store']); // Votar en encuesta
 });
 
 // Ruta de prueba de la API
