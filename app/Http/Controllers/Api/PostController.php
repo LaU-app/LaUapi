@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Carrera;
 use App\Models\Post;
 use App\Models\User;
+use App\Jobs\ProcessMentionsJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Intervention\Image\ImageManager;
@@ -274,6 +275,17 @@ class PostController extends Controller
             }
 
             $post->save();
+
+            ProcessMentionsJob::dispatchSync(
+                Auth::id(),
+                trim(implode(' ', array_filter([
+                    $post->titulo,
+                    $post->descripcion,
+                    $post->texto,
+                ]))),
+                'post',
+                $post->id
+            );
 
             // Cargar relaciones básicas para respuesta rápida (sin árbol completo aquí necesariamente)
             $post->load(['user', 'comentarios', 'likes']);

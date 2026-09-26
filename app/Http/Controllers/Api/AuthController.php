@@ -381,8 +381,21 @@ class AuthController extends Controller
      */
     public function checkUsername(Request $request)
     {
-        $exists = User::where('username', $request->username)->exists();
-        return response()->json(['available' => !$exists]);
+        $username = strtolower(trim((string) $request->input('username', '')));
+
+        if ($username === '') {
+            return response()->json([
+                'available' => false,
+                'message' => 'El nombre de usuario es obligatorio',
+            ], 422);
+        }
+
+        $exists = User::whereRaw('LOWER(TRIM(username)) = ?', [$username])->exists();
+
+        return response()->json([
+            'available' => !$exists,
+            'username' => $username,
+        ]);
     }
 
     /**

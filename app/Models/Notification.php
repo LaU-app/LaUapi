@@ -29,6 +29,7 @@ class Notification extends Model
     const TYPE_FOLLOW = 'follow';
     const TYPE_LIKE = 'like';
     const TYPE_COMMENT = 'comment';
+    const TYPE_MENTION = 'mention';
 
     // Relaciones
     public function user()
@@ -87,6 +88,8 @@ class Notification extends Model
                 return 'le gustó tu publicación';
             case self::TYPE_COMMENT:
                 return 'comentó tu publicación';
+            case self::TYPE_MENTION:
+                return 'te mencionó';
             default:
                 return 'interactuó contigo';
         }
