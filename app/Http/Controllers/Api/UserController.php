@@ -10,7 +10,50 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function searchFriends(Request $request)
+    {
+        $query = trim((string) $request->query('query', ''));
+
+        if ($query === '') {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $currentUserId = Auth::id();
+        $users = User::query()
+            ->select(['id', 'name', 'username', 'imagen', 'insignia'])
+            ->where('id', '!=', $currentUserId)
+            ->where(function ($builder) use ($query) {
+                $builder->where('username', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+            })
+            ->whereExists(function ($builder) use ($currentUserId) {
+                $builder->selectRaw('1')
+                    ->from('followers')
+                    ->whereColumn('followers.user_id', 'users.id')
+                    ->where('followers.follower_id', $currentUserId);
+            })
+            ->whereExists(function ($builder) use ($currentUserId) {
+                $builder->selectRaw('1')
+                    ->from('followers')
+                    ->whereColumn('followers.follower_id', 'users.id')
+                    ->where('followers.user_id', $currentUserId);
+            })
+            ->orderBy('username')
+            ->limit(10)
+            ->get()
+            ->each(function (User $user): void {
+                if ($user->imagen) {
+                    $user->imagen_url = url('perfiles/' . $user->imagen);
+                }
+            });
+
+        return response()->json(['success' => true, 'data' => $users]);
+    }
+
+    /**
+     * Obtiene la lista paginada de usuarios con filtros de búsqueda
+     */
+    public function index(Request $request) // <-- IMPORTANTE: Agregar Request $request
     {
         try {
             $query = User::with(['universidad', 'carrera'])

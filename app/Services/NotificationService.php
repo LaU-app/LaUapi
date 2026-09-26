@@ -189,6 +189,56 @@ class NotificationService
         }
     }
 
+    public function createMentionNotification(
+        int $authorId,
+        int $mentionedUserId,
+        string $mentionableType,
+        int|string $mentionableId
+    ): ?Notification {
+        if ($authorId === $mentionedUserId) {
+            return null;
+        }
+
+        try {
+            $author = User::find($authorId);
+
+            if (!$author) {
+                return null;
+            }
+
+            $notification = Notification::create([
+                'user_id' => $mentionedUserId,
+                'from_user_id' => $authorId,
+                'type' => Notification::TYPE_MENTION,
+                'post_id' => $mentionableType === 'post' ? $mentionableId : null,
+                'data' => [
+                    'mentionable_type' => $mentionableType,
+                    'mentionable_id' => (string) $mentionableId,
+                    'author_username' => $author->username,
+                    'author_name' => $author->name,
+                ],
+            ]);
+
+            NotificationController::sendPushNotification(
+                $mentionedUserId,
+                'Nueva mención',
+                "{$author->name} te mencionó",
+                [
+                    'type' => Notification::TYPE_MENTION,
+                    'mentionable_type' => $mentionableType,
+                    'mentionable_id' => (string) $mentionableId,
+                    'user_id' => (string) $authorId,
+                    'notification_id' => (string) $notification->id,
+                ]
+            );
+
+            return $notification;
+        } catch (\Throwable $e) {
+            Log::error('Error creating mention notification: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Crea una notificación en la base de datos y envía un Push Notification 
      * al autor del comentario padre cuando se recibe una respuesta (Reply).
