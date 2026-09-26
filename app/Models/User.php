@@ -191,4 +191,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Reporte::class, 'reported_user_id');
     }
+
+    public function store()
+    {
+        return $this->hasOne(Store::class);
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function purchases()
+    {
+        return $this->hasMany(Order::class, 'buyer_id');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Order::class, 'seller_id');
+    }
 }
