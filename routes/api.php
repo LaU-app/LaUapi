@@ -10,8 +10,6 @@ use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\MusicSearchController;
 use App\Http\Controllers\Api\UniversidadController;
 use App\Http\Controllers\Api\FollowerController;
-use App\Http\Controllers\Api\TaskController;
-use App\Http\Controllers\Api\PomodoroController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\AppUpdateController;
@@ -55,6 +53,22 @@ Route::get('/check-update', [AppUpdateController::class, 'checkUpdate']);
 
 // Rutas protegidas (requieren autenticación con token Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/realtime/auth', \App\Http\Controllers\Api\RealtimeAuthController::class);
+    Route::get('/tasks-stats', [\App\Http\Controllers\Api\TaskController::class, 'stats']);
+    Route::apiResource('tasks', \App\Http\Controllers\Api\TaskController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+
+    Route::prefix('pomodoro')->controller(\App\Http\Controllers\Api\StudyController::class)->group(function () {
+        Route::get('preferences', 'preferences');
+        Route::put('preferences', 'updatePreferences');
+        Route::post('start', 'start');
+        Route::post('complete', 'finish');
+        Route::post('cancel', 'cancel');
+        Route::get('active', 'active');
+        Route::get('sessions', 'history');
+        Route::get('stats', 'stats');
+        Route::get('leaderboard', 'leaderboard');
+    });
+
     // Autenticación
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -129,23 +143,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/shared', [App\Http\Controllers\Api\ChatApiController::class, 'getSharedPhotos']);
     Route::post('/chat/makeSeen', [App\Http\Controllers\Api\ChatApiController::class, 'makeSeen']);
     Route::get('/chat/unread-count', [App\Http\Controllers\Api\ChatApiController::class, 'unreadCount']);
-
-    // ========== TODO & POMODORO ROUTES ==========
-
-    // Tareas (Tasks)
-    Route::apiResource('tasks', TaskController::class);
-    Route::get('/tasks-stats', [TaskController::class, 'stats']); // Estadísticas de tareas
-
-    // Sesiones de Pomodoro
-    Route::prefix('pomodoro')->group(function () {
-        Route::post('/start', [PomodoroController::class, 'start']); // Iniciar sesión
-        Route::post('/complete', [PomodoroController::class, 'complete']); // Completar sesión
-        Route::post('/cancel', [PomodoroController::class, 'cancel']); // Cancelar sesión
-        Route::get('/leaderboard', [PomodoroController::class, 'leaderboard']); // Podio semanal/mensual
-        Route::get('/sessions', [PomodoroController::class, 'index']); // Listar sesiones
-        Route::get('/active', [PomodoroController::class, 'active']); // Sesión activa
-        Route::get('/stats', [PomodoroController::class, 'stats']); // Estadísticas de Pomodoro
-    });
 
     // Banner de la app
     Route::get('/banners/active', [BannerController::class, 'getActive']);

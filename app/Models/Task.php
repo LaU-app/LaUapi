@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Task extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'uuid_cliente',
@@ -31,65 +32,54 @@ class Task extends Model
         'completed_pomodoros' => 'integer',
     ];
 
-    /**
-     * Relación con el usuario dueño de la tarea
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Relación con las sesiones de pomodoro
-     */
     public function pomodoroSessions()
+    {
+        return $this->hasMany(StudySession::class);
+    }
+
+    public function legacyPomodoroSessions()
     {
         return $this->hasMany(PomodoroSession::class);
     }
 
-    /**
-     * Scope para tareas pendientes
-     */
+    public function scopeWithProgress($query)
+    {
+        return $query->withCount([
+            'pomodoroSessions as completed_pomodoros' =>
+                fn ($q) => $q->where('status', 'completed'),
+        ]);
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
-    /**
-     * Scope para tareas en progreso
-     */
     public function scopeInProgress($query)
     {
         return $query->where('status', 'in_progress');
     }
 
-    /**
-     * Scope para tareas completadas
-     */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
     }
 
-    /**
-     * Scope para ordenar por prioridad
-     */
     public function scopeOrderByPriority($query)
     {
         return $query->orderByRaw("FIELD(priority, 'high', 'medium', 'low')");
     }
 
-    /**
-     * Scope para ordenar por fecha de vencimiento
-     */
     public function scopeOrderByDueDate($query)
     {
         return $query->orderBy('due_date', 'asc');
     }
 
-    /**
-     * Marcar tarea como completada
-     */
     public function markAsCompleted()
     {
         $this->update([
@@ -98,14 +88,10 @@ class Task extends Model
         ]);
     }
 
-    /**
-     * Incrementar contador de pomodoros completados
-     */
     public function incrementPomodoros()
     {
         $this->increment('completed_pomodoros');
 
-        // Actualizar estado a in_progress si está pending
         if ($this->status === 'pending') {
             $this->update(['status' => 'in_progress']);
         }
