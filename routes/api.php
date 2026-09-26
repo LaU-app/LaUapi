@@ -13,6 +13,11 @@ use App\Http\Controllers\Api\FollowerController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\AppUpdateController;
+use App\Http\Controllers\Api\Marketplace\OrderController;
+use App\Http\Controllers\Api\Marketplace\ProductCategoryController;
+use App\Http\Controllers\Api\Marketplace\ProductController;
+use App\Http\Controllers\Api\Marketplace\ProductImageController;
+use App\Http\Controllers\Api\Marketplace\StoreController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +48,13 @@ Route::get('/posts/{post}', [PostController::class, 'show']);
 Route::post('/posts/filter', [PostController::class, 'filtropost']);
 Route::get('/posts/user/{userId}', [PostController::class, 'userPosts']);
 
+Route::prefix('marketplace')->group(function () {
+    Route::get('/categories', [ProductCategoryController::class, 'index']);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product');
+    Route::get('/stores/{store:slug}', [StoreController::class, 'show']);
+});
+
 // Búsqueda de música iTunes (público)
 Route::get('/music/search', [MusicSearchController::class, 'search']);
 Route::get('/music/track', [MusicSearchController::class, 'getTrack']);
@@ -67,6 +79,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sessions', 'history');
         Route::get('stats', 'stats');
         Route::get('leaderboard', 'leaderboard');
+    });
+
+    Route::prefix('marketplace')->group(function () {
+        Route::post('/images', [ProductImageController::class, 'store']);
+        Route::delete('/images/{image}', [ProductImageController::class, 'destroy'])->whereNumber('image');
+
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::match(['put', 'patch'], '/products/{product}', [ProductController::class, 'update'])->whereNumber('product');
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])->whereNumber('product');
+
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->whereNumber('order');
+        Route::patch('/orders/{order}', [OrderController::class, 'update'])->whereNumber('order');
+        Route::post('/orders/{order}/deliver', [OrderController::class, 'deliver'])->whereNumber('order');
+        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->whereNumber('order');
+
+        Route::post('/store', [StoreController::class, 'store']);
+        Route::match(['put', 'patch'], '/store', [StoreController::class, 'update']);
+
+        Route::get('/my/products', [ProductController::class, 'mine']);
+        Route::get('/my/orders', [OrderController::class, 'purchases']);
+        Route::get('/my/sales', [OrderController::class, 'sales']);
+        Route::get('/my/store', [StoreController::class, 'mine']);
+        Route::get('/my/dashboard', [StoreController::class, 'dashboard']);
     });
 
     // Autenticación
