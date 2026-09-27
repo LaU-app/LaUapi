@@ -12,6 +12,15 @@ class RegisterRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('username')) {
+            $this->merge([
+                'username' => strtolower(trim((string) $this->input('username'))),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -66,6 +75,7 @@ class RegisterRequest extends FormRequest
             'carrera_id.required' => 'Debes seleccionar una carrera',
             'carrera_id.exists' => 'La carrera seleccionada no existe',
             'email.unique' => 'Este correo ya está registrado',
+            'username.unique' => 'Este nombre de usuario ya está en uso',
             'role.required' => 'Debes seleccionar un rol',
             'role.in' => 'El rol debe ser aspirante, estudiante o egresado',
             'password.confirmed' => 'Las contraseñas no coinciden',

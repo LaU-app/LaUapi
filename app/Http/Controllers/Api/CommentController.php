@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Comentario;
+use App\Jobs\ProcessMentionsJob;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -126,6 +127,13 @@ class CommentController extends Controller
             }
 
             DB::commit();
+
+            ProcessMentionsJob::dispatchSync(
+                Auth::id(),
+                $comentario->comentario,
+                'comment',
+                $comentario->id
+            );
             
             // ------------------------------------------------------------------
             // LÓGICA DE NOTIFICACIONES

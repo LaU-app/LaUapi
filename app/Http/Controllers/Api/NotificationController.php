@@ -342,7 +342,7 @@ class NotificationController extends Controller
     {
         try {
             $request->validate([
-                'type' => 'required|in:like,comment,follow'
+                'type' => 'required|in:like,comment,follow,mention'
             ]);
 
             // Obtengo notificaciones del tipo especificado

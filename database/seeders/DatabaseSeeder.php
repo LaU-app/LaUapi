@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             TasksSeeder::class,           
             PomodoroSessionSeeder::class, 
             PomodoroPodiumSeeder::class,
+
+            // 4. Catálogo base del Marketplace
+            ProductCategorySeeder::class,
         ]);
     }
 }

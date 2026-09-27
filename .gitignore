@@ -24,4 +24,6 @@ yarn-error.log
 /public/perfiles
 /public/uploads
 /public/files
+/public/marketplace
+/public/tiendas
 /storage/app/firebase/service-account.json
