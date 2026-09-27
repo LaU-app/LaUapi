@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\FollowerController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\AppUpdateController;
+use App\Http\Controllers\Api\PollController;
+use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\Marketplace\OrderController;
 use App\Http\Controllers\Api\Marketplace\ProductCategoryController;
 use App\Http\Controllers\Api\Marketplace\ProductController;
@@ -48,6 +50,9 @@ Route::get('/posts/{post}', [PostController::class, 'show']);
 Route::post('/posts/filter', [PostController::class, 'filtropost']);
 Route::get('/posts/user/{userId}', [PostController::class, 'userPosts']);
 
+// Encuestas públicas (solo lectura)
+Route::get('/polls', [PollController::class, 'index']);
+Route::get('/polls/{poll}', [PollController::class, 'show']);
 Route::prefix('marketplace')->group(function () {
     Route::get('/categories', [ProductCategoryController::class, 'index']);
     Route::get('/products', [ProductController::class, 'index']);
@@ -184,6 +189,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/banners/active', [BannerController::class, 'getActive']);
 
     Route::post('/banners/{banner}/view', [BannerController::class, 'markViewed']);
+
+    // ========== ENCUESTAS (POLLS) ROUTES ==========
+    Route::post('/polls', [PollController::class, 'store']); // Crear encuesta
+    Route::delete('/polls/{poll}', [PollController::class, 'destroy']); // Eliminar encuesta (solo dueño)
+    Route::post('/polls/{poll}/vote', [PollVoteController::class, 'store']); // Votar en encuesta
 });
 
 // Ruta de prueba de la API
