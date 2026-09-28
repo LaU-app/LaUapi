@@ -46,6 +46,8 @@ Route::get('/carreras', [UniversidadController::class, 'getAllCarreras']);
 
 // Posts públicos (solo lectura)
 Route::get('/posts', [PostController::class, 'index']);
+// Debe ir antes de /posts/{post}; si no, "search" se toma como id de post
+Route::get('/posts/search', [PostController::class, 'search'])->middleware('throttle:60,1');
 Route::get('/posts/{post}', [PostController::class, 'show']);
 Route::post('/posts/filter', [PostController::class, 'filtropost']);
 Route::get('/posts/user/{userId}', [PostController::class, 'userPosts']);
