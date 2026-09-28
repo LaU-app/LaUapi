@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Jobs\ProcessMentionsJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
@@ -19,6 +20,18 @@ use Intervention\Image\Drivers\Gd\Driver;
  */
 class PostController extends Controller
 {
+    /** Columnas de posts donde busca search() (además del nombre y @usuario del autor) */
+    private const SEARCHABLE_POST_COLUMNS = [
+        'texto',
+        'titulo',
+        'descripcion',
+        'itunes_track_name',
+        'itunes_artist_name',
+    ];
+
+    /** Máximo de palabras que se toman del término, para acotar la consulta */
+    private const SEARCH_MAX_WORDS = 6;
+
     /**
      * Obtiene todos los posts para el feed de la API
      */
@@ -30,39 +43,7 @@ class PostController extends Controller
                 ->latest()
                 ->paginate(20);
 
-            $posts->getCollection()->transform(function ($post) {
-                if ($post->imagen) {
-                    $post->imagen_url = url('uploads/' . $post->imagen);
-                }
-                if ($post->imagen_mini) {
-                    $post->imagen_mini_url = url('uploads/' . $post->imagen_mini);
-                }
-                if ($post->archivo) {
-                    $post->archivo_url = url('files/' . $post->archivo);
-                }
-                if ($post->user && $post->user->imagen) {
-                    $post->user->imagen_url = url('perfiles/' . $post->user->imagen);
-                }
-                // Nota: En el feed mantenemos la carga simple para rendimiento.
-                // Si necesitas anidamiento en el feed, habría que aplicar la lógica de show() aquí también.
-                if ($post->comentarios) {
-                    $post->comentarios->transform(function ($comentario) {
-                        if ($comentario->user && $comentario->user->imagen) {
-                            $comentario->user->imagen_url = url('perfiles/' . $comentario->user->imagen);
-                        }
-                        return $comentario;
-                    });
-                }
-                if ($post->likes) {
-                    $post->likes->transform(function ($like) {
-                        if ($like->user && $like->user->imagen) {
-                            $like->user->imagen_url = url('perfiles/' . $like->user->imagen);
-                        }
-                        return $like;
-                    });
-                }
-                return $post;
-            });
+            $posts->getCollection()->transform(fn ($post) => $this->formatFeedPost($post));
 
             return response()->json([
                 'success' => true,
@@ -100,37 +81,7 @@ class PostController extends Controller
 
             $posts = $query->latest()->paginate(20);
 
-
-            $posts->getCollection()->transform(function ($post) {
-                if ($post->imagen) {
-                    $post->imagen_url = url('uploads/' . $post->imagen);
-                }
-                if ($post->archivo) {
-                    $post->archivo_url = url('files/' . $post->archivo);
-                }
-                if ($post->user && $post->user->imagen) {
-                    $post->user->imagen_url = url('perfiles/' . $post->user->imagen);
-                }
-                // Nota: En el feed mantenemos la carga simple para rendimiento.
-                // Si necesitas anidamiento en el feed, habría que aplicar la lógica de show() aquí también.
-                if ($post->comentarios) {
-                    $post->comentarios->transform(function ($comentario) {
-                        if ($comentario->user && $comentario->user->imagen) {
-                            $comentario->user->imagen_url = url('perfiles/' . $comentario->user->imagen);
-                        }
-                        return $comentario;
-                    });
-                }
-                if ($post->likes) {
-                    $post->likes->transform(function ($like) {
-                        if ($like->user && $like->user->imagen) {
-                            $like->user->imagen_url = url('perfiles/' . $like->user->imagen);
-                        }
-                        return $like;
-                    });
-                }
-                return $post;
-            });
+            $posts->getCollection()->transform(fn ($post) => $this->formatFeedPost($post));
 
             return response()->json([
                 'success' => true,
@@ -141,6 +92,104 @@ class PostController extends Controller
                 'success' => false,
                 'message' => 'Error al obtener posts',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Busca posts por texto y/o por la universidad y carrera del autor.
+     *
+     * - q: palabras a buscar; cada una debe aparecer en el contenido, título,
+     *   descripción, canción, nombre o @usuario del autor. La collation de MySQL
+     *   (utf8mb4_unicode_ci) hace que no distinga tildes ni mayúsculas.
+     * - universidad / carrera: ids del perfil del autor.
+     *
+     * Solo devuelve lo que quien pregunta puede ver: sin sesión, los posts
+     * públicos; con sesión, además los suyos y los "solo seguidores" de las
+     * personas que sigue.
+     */
+    public function search(Request $request)
+    {
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'universidad' => 'nullable|integer',
+            'carrera' => 'nullable|integer',
+        ]);
+
+        $words = collect(preg_split('/\s+/u', trim($validated['q'] ?? ''), -1, PREG_SPLIT_NO_EMPTY))
+            ->unique()
+            ->take(self::SEARCH_MAX_WORDS);
+        $universidad = $validated['universidad'] ?? null;
+        $carrera = $validated['carrera'] ?? null;
+
+        if ($words->isEmpty() && !$universidad && !$carrera) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Escribe algo para buscar o elige una universidad o carrera.',
+            ], 422);
+        }
+
+        try {
+            // La ruta es pública, pero si viene el token se usa para la visibilidad
+            $viewer = $request->user('sanctum');
+
+            $query = Post::with(['user', 'comentarios.user', 'likes'])
+                ->withCount(['comentarios', 'likes'])
+                ->where(function ($visible) use ($viewer) {
+                    $visible->where('posts.visibility', 'public')->orWhereNull('posts.visibility');
+
+                    if ($viewer) {
+                        $visible->orWhere('posts.user_id', $viewer->id)
+                            ->orWhere(function ($followed) use ($viewer) {
+                                $followed->where('posts.visibility', 'followers')
+                                    ->whereIn('posts.user_id', DB::table('followers')
+                                        ->where('follower_id', $viewer->id)
+                                        ->select('user_id'));
+                            });
+                    }
+                });
+
+            foreach ($words as $word) {
+                $pattern = '%' . $this->escapeLike($word) . '%';
+
+                $query->where(function ($match) use ($pattern) {
+                    foreach (self::SEARCHABLE_POST_COLUMNS as $column) {
+                        $match->orWhereRaw("posts.{$column} LIKE ? ESCAPE '!'", [$pattern]);
+                    }
+                    $match->orWhereHas('user', function ($author) use ($pattern) {
+                        $author->whereRaw("users.name LIKE ? ESCAPE '!'", [$pattern])
+                            ->orWhereRaw("users.username LIKE ? ESCAPE '!'", [$pattern]);
+                    });
+                });
+            }
+
+            if ($universidad || $carrera) {
+                $query->whereHas('user', function ($author) use ($universidad, $carrera) {
+                    if ($universidad) {
+                        $author->where('universidad_id', $universidad);
+                    }
+                    if ($carrera) {
+                        $author->where('carrera_id', $carrera);
+                    }
+                });
+            }
+
+            // El id desempata posts creados en el mismo segundo para que las páginas no se repitan
+            $posts = $query->latest()->orderByDesc('posts.id')->paginate(20)->withQueryString();
+
+            $posts->getCollection()->transform(fn ($post) => $this->formatFeedPost($post));
+
+            return response()->json([
+                'success' => true,
+                'data' => $posts
+            ]);
+        } catch (\Exception $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar publicaciones',
+                'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -394,6 +443,54 @@ class PostController extends Controller
      * Método auxiliar privado para formatear recursivamente el árbol de comentarios
      * Asegura que todos los niveles (padres e hijos) tengan la URL de la imagen del usuario
      */
+    /**
+     * Agrega las URLs completas de imágenes y archivos a un post del feed
+     * (usado por index, filtropost y search)
+     */
+    private function formatFeedPost($post)
+    {
+        if ($post->imagen) {
+            $post->imagen_url = url('uploads/' . $post->imagen);
+        }
+        if ($post->imagen_mini) {
+            $post->imagen_mini_url = url('uploads/' . $post->imagen_mini);
+        }
+        if ($post->archivo) {
+            $post->archivo_url = url('files/' . $post->archivo);
+        }
+        if ($post->user && $post->user->imagen) {
+            $post->user->imagen_url = url('perfiles/' . $post->user->imagen);
+        }
+        // Nota: En el feed mantenemos la carga simple para rendimiento.
+        // Si necesitas anidamiento en el feed, habría que aplicar la lógica de show() aquí también.
+        if ($post->comentarios) {
+            $post->comentarios->transform(function ($comentario) {
+                if ($comentario->user && $comentario->user->imagen) {
+                    $comentario->user->imagen_url = url('perfiles/' . $comentario->user->imagen);
+                }
+                return $comentario;
+            });
+        }
+        if ($post->likes) {
+            $post->likes->transform(function ($like) {
+                if ($like->user && $like->user->imagen) {
+                    $like->user->imagen_url = url('perfiles/' . $like->user->imagen);
+                }
+                return $like;
+            });
+        }
+        return $post;
+    }
+
+    /**
+     * Escapa los comodines de LIKE para que "ana_1" o "100%" se busquen literal.
+     * Usa "!" como carácter de escape porque funciona igual en MySQL y SQLite.
+     */
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+    }
+
     private function formatCommentTree($comentario)
     {
         // Formatear usuario del comentario actual

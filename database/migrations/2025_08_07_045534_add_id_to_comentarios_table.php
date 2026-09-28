@@ -12,6 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Reparación exclusiva de MySQL (SHOW CREATE TABLE, AUTO_INCREMENT). En otros
+        // motores, como el SQLite de las pruebas, la tabla ya se crea con su id.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Verificar si la columna 'id' existe en la tabla comentarios
         $hasId = Schema::hasColumn('comentarios', 'id');
         
