@@ -72,4 +72,9 @@ return [
     // URL pública de la app (a dónde vuelve un comercio al terminar la conexión con PayPal).
     'frontend_url' => rtrim((string) env('FRONTEND_URL', 'https://lauapp.es'), '/'),
 
+    // Correo al que responden los comercios (los avisos salen desde MAIL_FROM_ADDRESS).
+    'lau' => [
+        'reply_to' => env('MAIL_REPLY_TO_ADDRESS', 'lauapp.es@gmail.com'),
+    ],
+
 ];

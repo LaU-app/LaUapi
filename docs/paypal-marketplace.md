@@ -107,15 +107,31 @@ php artisan migrate
 php artisan db:seed --class=MarketplaceShowcaseSeeder         # opcional: vitrina con datos ficticios
 php artisan paypal:check                                      # credenciales y permisos de la app
 php artisan paypal:link-store papeleria-campus-central <tracking_id>   # vincular un comercio ya conectado
+php artisan marketplace:demo-accounts                         # cuentas demo (estudiante y comercio); pide la contraseña
 ```
 
 Comandos de soporte: `paypal:onboard-link {tracking_id}` y `paypal:seller-status {tracking_id}`. Se
 mantienen como alias los nombres anteriores `paypal:sandbox-*`.
 
+## Correo al aprobar un comercio
+
+Al aprobar una solicitud desde el panel, LaU envía `App\Mail\MerchantApprovedMail`
+(`resources/views/emails/comercio-aprobado.blade.php`) al correo de contacto del comercio, con copia
+a la cuenta dueña de la tienda. Las respuestas van a `MAIL_REPLY_TO_ADDRESS`
+(`lauapp.es@gmail.com`). Si el envío falla, la aprobación se mantiene, el fallo se registra en el log
+y el panel lo avisa.
+
+| Opción | Configuración |
+|---|---|
+| Gmail (inmediata) | `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_USERNAME=lauapp.es@gmail.com`, `MAIL_PASSWORD=<contraseña de aplicación>` |
+| Resend (producción) | Verificar el dominio `lauapp.es` en Resend. Luego `MAIL_HOST=smtp.resend.com`, `MAIL_PORT=465`, `MAIL_SCHEME=smtps`, `MAIL_USERNAME=resend`, `MAIL_PASSWORD=<API key>`, `MAIL_FROM_ADDRESS=no-reply@lauapp.es` |
+
+Resend no puede enviar desde una dirección `@gmail.com`, porque exige un dominio verificado.
+
 ## Pruebas
 
 ```bash
-php artisan test --filter='PayPal|SmartShopping|JevClient|MerchantVerification'
+php artisan test --filter='PayPal|SmartShopping|JevClient|MerchantVerification|MarketplaceShowcase'
 RUN_TYPESAFE_LIVE=1 TYPESAFE_API_KEY=... php artisan test --filter=test_live_typesafe   # prueba real opcional
 ```
 

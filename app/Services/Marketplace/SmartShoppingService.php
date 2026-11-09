@@ -300,7 +300,7 @@ class SmartShoppingService
                 'within_budget' => $c['within_budget'],
                 'recommended' => $recommended !== null && $recommended['product']->id === $c['product']->id,
             ])->all(),
-            'message' => SmartShoppingCopy::for($outcome, $base, $recommended),
+            'message' => SmartShoppingCopy::for($outcome, $base, $recommended, $scored),
         ];
     }
 

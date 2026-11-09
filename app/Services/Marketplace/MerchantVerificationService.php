@@ -2,15 +2,19 @@
 
 namespace App\Services\Marketplace;
 
+use App\Mail\MerchantApprovedMail;
 use App\Models\Store;
 use App\Models\StoreVerification;
 use App\Services\PayPal\PayPalClient;
 use App\Services\PayPal\SellerStatus;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Ciclo de vida de un comercio verificado:
@@ -70,9 +74,28 @@ class MerchantVerificationService
         });
     }
 
-    public function approve(StoreVerification $verification, string $reviewer, ?string $notes = null): void
+    /**
+     * Aprueba al comercio y le avisa por correo. Devuelve si el correo se pudo enviar:
+     * un fallo de correo no revierte la aprobación, solo se registra.
+     */
+    public function approve(StoreVerification $verification, string $reviewer, ?string $notes = null): bool
     {
         $this->review($verification, 'approved', $reviewer, $notes);
+
+        try {
+            $owner = $verification->store->user?->email;
+            $mail = Mail::to($verification->contact_email);
+            if ($owner && strcasecmp($owner, $verification->contact_email) !== 0) {
+                $mail->cc($owner);
+            }
+            $mail->send(new MerchantApprovedMail($verification->fresh('store')));
+
+            return true;
+        } catch (Throwable $e) {
+            Log::warning('Correo de comercio aprobado no enviado', ['store_id' => $verification->store_id, 'error' => class_basename($e)]);
+
+            return false;
+        }
     }
 
     public function reject(StoreVerification $verification, string $reviewer, string $notes): void

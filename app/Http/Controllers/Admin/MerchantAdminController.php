@@ -53,9 +53,11 @@ class MerchantAdminController extends Controller
     public function approve(Request $request, StoreVerification $verification)
     {
         $data = $request->validate(['notes' => 'nullable|string|max:1000']);
-        $this->merchants->approve($verification, $this->reviewer(), $data['notes'] ?? null);
+        $emailed = $this->merchants->approve($verification, $this->reviewer(), $data['notes'] ?? null);
 
-        return back()->with('success', 'Comercio aprobado. Ya puede conectar su cuenta de PayPal desde la app.');
+        return $emailed
+            ? back()->with('success', 'Comercio aprobado. Le enviamos un correo a '.$verification->contact_email.' para que conecte PayPal.')
+            : back()->with('error', 'Comercio aprobado, pero no se pudo enviar el correo a '.$verification->contact_email.'. Revisa la configuración MAIL_* del servidor.');
     }
 
     public function reject(Request $request, StoreVerification $verification)

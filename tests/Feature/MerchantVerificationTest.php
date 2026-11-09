@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\MerchantApprovedMail;
 use App\Models\AssistantDecision;
 use App\Models\Store;
 use App\Models\StoreVerification;
@@ -12,6 +13,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\MarketplaceFixtures;
@@ -151,6 +153,43 @@ class MerchantVerificationTest extends TestCase
         $this->getJson('/api/marketplace/verified-stores')->assertOk()
             ->assertJsonPath('data.0.name', 'Papelería Campus')
             ->assertJsonPath('data.0.accepts_paypal', true);
+    }
+
+    public function test_approval_emails_the_merchant_from_lau(): void
+    {
+        Mail::fake();
+        $this->post('/api/marketplace/my/verification', $this->application(), ['Accept' => 'application/json'])->assertCreated();
+        $verification = StoreVerification::firstOrFail();
+
+        $this->actingAs($this->admin(), 'super')
+            ->post(route('su.comercios.approve', $verification))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Mail::assertSent(MerchantApprovedMail::class, function (MerchantApprovedMail $mail) {
+            $html = $mail->render();
+
+            return $mail->hasTo('ventas@papeleriacampus.test')
+                && $mail->hasCc($this->owner->email)
+                && $mail->hasReplyTo('lauapp.es@gmail.com')
+                && str_contains($mail->envelope()->subject, 'Papelería Campus')
+                && str_contains($html, 'https://lauapp.es/tabs/marketplace/empresa')
+                && str_contains($html, 'Conectar PayPal');
+        });
+    }
+
+    public function test_a_mail_failure_does_not_undo_the_approval(): void
+    {
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp caído'));
+        $this->post('/api/marketplace/my/verification', $this->application(), ['Accept' => 'application/json'])->assertCreated();
+        $verification = StoreVerification::firstOrFail();
+
+        $this->actingAs($this->admin(), 'super')
+            ->post(route('su.comercios.approve', $verification))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame('approved', $this->store->fresh()->verification_status);
     }
 
     public function test_rejection_returns_notes_to_the_merchant_and_allows_resubmission(): void

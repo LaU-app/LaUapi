@@ -63,7 +63,10 @@ class SmartShoppingTest extends TestCase
             ->assertJsonPath('data.recommendations.0.within_budget', true)
             ->assertJsonPath('data.recommendations.0.store.is_verified', true)
             ->assertJsonPath('data.recommendations.0.match_probability', 0.95);
-        $this->assertStringContainsString('Te recomendamos Calculadora científica', $response->json('data.message.title'));
+        $this->assertSame('Encontré lo que buscás', $response->json('data.message.title'));
+        // El estudiante no ve el nombre del modelo ni del proveedor de IA.
+        $this->assertStringNotContainsString('Jev', json_encode($response->json('data.message')));
+        $this->assertStringNotContainsString('TypeSafe', json_encode($response->json('data.message')));
         $this->assertNoSecrets($response->getContent());
 
         $decision = AssistantDecision::findOrFail($response->json('data.decision_id'));
@@ -97,7 +100,8 @@ class SmartShoppingTest extends TestCase
             ->assertJsonPath('data.budget.source', 'message')
             ->assertJsonPath('data.outcome', 'over_budget')
             ->assertJsonPath('data.recommendations.0.within_budget', false)
-            ->assertJsonPath('data.recommendations.0.recommended', false);
+            ->assertJsonPath('data.recommendations.0.recommended', false)
+            ->assertJsonPath('data.message.body.0', 'La opción más económica cuesta $18.50.');
     }
 
     public function test_does_not_apply_an_amount_whose_meaning_is_unclear(): void

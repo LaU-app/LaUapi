@@ -37,7 +37,7 @@ class SmartShoppingController extends MarketplaceController
             return response()->json([
                 'success' => false,
                 'code' => 'assistant_unavailable',
-                'message' => 'La compra inteligente no está disponible en este momento. Podés buscar en el catálogo mientras tanto.',
+                'message' => 'El asistente no está disponible en este momento. Podés buscar en el catálogo mientras tanto.',
             ], 503);
         }
 

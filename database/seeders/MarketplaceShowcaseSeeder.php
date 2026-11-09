@@ -9,6 +9,7 @@ use App\Models\StoreVerification;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Vitrina de LaU Marketplace con comercios verificados (datos ficticios).
@@ -19,6 +20,12 @@ use Illuminate\Support\Facades\Hash;
  */
 class MarketplaceShowcaseSeeder extends Seeder
 {
+    /** Cuenta LaU del comercio de vitrina (la usan los jurados para ver sus ventas). */
+    public const MERCHANT_EMAIL = 'comercio.demo@lauapp.es';
+
+    /** Cuenta LaU de estudiante para probar compras (la crea marketplace:demo-accounts). */
+    public const STUDENT_EMAIL = 'estudiante.demo@lauapp.es';
+
     public function run(): void
     {
         $this->call(ProductCategorySeeder::class);
@@ -26,7 +33,7 @@ class MarketplaceShowcaseSeeder extends Seeder
 
         // Comercio verificado que cobra con PayPal (la conexión se confirma con paypal:link-store).
         $papeleria = $this->store(
-            ['name' => 'Papelería Campus Central', 'username' => 'papeleria_campus', 'email' => 'ventas@papeleriacampus.lau.test'],
+            ['name' => 'Papelería Campus Central', 'username' => 'papeleria_campus', 'email' => MarketplaceShowcaseSeeder::MERCHANT_EMAIL],
             [
                 'name' => 'Papelería Campus Central',
                 'description' => 'Útiles, calculadoras y material técnico para estudiantes universitarios. Entregas en campus de lunes a sábado.',
@@ -85,15 +92,20 @@ class MarketplaceShowcaseSeeder extends Seeder
 
     private function store(array $owner, array $store, array $verification, string $status): Store
     {
-        $user = User::firstOrNew(['email' => $owner['email']]);
+        // Si la tienda de vitrina ya existe, se reutiliza con su dueño (idempotente).
+        $existing = Store::where('slug', Str::slug($store['name']))->with('user')->first();
+
+        // Sin factories: en producción no se instalan las dependencias de desarrollo (Faker).
+        // La contraseña es aleatoria; para las cuentas de demostración se fija con marketplace:demo-accounts.
+        $user = $existing?->user ?? User::firstOrNew(['email' => $owner['email']]);
         if (! $user->exists) {
-            $user = User::factory()->create([
-                'name' => $owner['name'], 'username' => $owner['username'], 'email' => $owner['email'],
-                'password' => Hash::make(str()->random(32)),
-            ]);
+            $user->forceFill([
+                'name' => $owner['name'], 'username' => $owner['username'],
+                'password' => Hash::make(Str::random(40)),
+            ])->save();
         }
 
-        $model = Store::firstOrNew(['user_id' => $user->id]);
+        $model = $existing ?? Store::firstOrNew(['user_id' => $user->id]);
         $model->fill($store + ['slug' => $model->slug ?? Store::uniqueSlug($store['name']), 'is_active' => true]);
         $model->user()->associate($user);
         $model->forceFill([
