@@ -118,7 +118,7 @@ class OrderCheckoutService
     private function hydrate(array $ids): Collection
     {
         return Order::whereIn('id', $ids)
-            ->with('items', 'seller:id,name,username,imagen', 'store:id,name,slug,logo')
+            ->with('items', 'seller:id,name,username,imagen', 'store:'.\App\Models\Store::CARD_COLUMNS)
             ->orderBy('id')
             ->get();
     }
@@ -157,6 +157,11 @@ class OrderCheckoutService
 
             if ($record->status !== 'pending') {
                 throw ValidationException::withMessages(['status' => 'Este apartado ya está '.$this->label($record->status).'.']);
+            }
+
+            // Un pedido pagado con PayPal no se cancela como apartado: devolverlo requiere un reembolso.
+            if ($record->payment_status === 'paid') {
+                throw ValidationException::withMessages(['status' => 'Este pedido ya fue pagado con PayPal. Coordiná con el comercio la entrega o la devolución.']);
             }
 
             foreach ($record->items as $item) {

@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends MarketplaceController
 {
-    private const RELATIONS = ['items', 'buyer:id,name,username,imagen', 'seller:id,name,username,imagen', 'store:id,name,slug,logo'];
+    private const RELATIONS = ['items', 'buyer:id,name,username,imagen', 'seller:id,name,username,imagen', 'store:'.\App\Models\Store::CARD_COLUMNS];
 
     public function store(Request $request, OrderCheckoutService $checkout)
     {

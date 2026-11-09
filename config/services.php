@@ -48,4 +48,28 @@ return [
     'webhook_url' => env('MAKE_WEBHOOK_URL'),
 ],
 
+    // PayPal (comercios verificados de LaU Marketplace). Los hosts por entorno viven en
+    // App\Services\PayPal\PayPalClient. Se aceptan los nombres PAYPAL_SANDBOX_* anteriores.
+    'paypal' => [
+        'mode' => env('PAYPAL_MODE', 'sandbox') === 'live' ? 'live' : 'sandbox',
+        'client_id' => env('PAYPAL_CLIENT_ID') ?: env('PAYPAL_SANDBOX_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET') ?: env('PAYPAL_SANDBOX_CLIENT_SECRET'),
+        // Account ID (merchant ID) de la cuenta Business dueña de la app Platform.
+        'platform_account_id' => env('PAYPAL_PLATFORM_ACCOUNT_ID') ?: env('PAYPAL_SANDBOX_PLATFORM_ACCOUNT_ID'),
+        // Opcional: se envía como PayPal-Partner-Attribution-Id si existe.
+        'bn_code' => env('PAYPAL_BN_CODE') ?: env('PAYPAL_SANDBOX_BN_CODE'),
+    ],
+
+    // TypeSafe AI (Jev, modelo System One): decisiones tipadas para la compra inteligente.
+    // La clave solo vive en el servidor.
+    'typesafe' => [
+        'api_key' => env('TYPESAFE_API_KEY'),
+        'model' => env('TYPESAFE_MODEL') ?: 'jev-latest',
+        'endpoint' => 'https://api.typesafe.ai/v1/systemone',
+        'timeout' => 20,
+    ],
+
+    // URL pública de la app (a dónde vuelve un comercio al terminar la conexión con PayPal).
+    'frontend_url' => rtrim((string) env('FRONTEND_URL', 'https://lauapp.es'), '/'),
+
 ];

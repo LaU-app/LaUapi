@@ -16,6 +16,10 @@ use App\Http\Controllers\Api\AppUpdateController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\Marketplace\OrderController;
+use App\Http\Controllers\Api\Marketplace\MerchantVerificationController;
+use App\Http\Controllers\Api\Marketplace\PayPalCheckoutController;
+use App\Http\Controllers\Api\Marketplace\SmartShoppingController;
+use App\Http\Controllers\Api\Marketplace\VerifiedStoreController;
 use App\Http\Controllers\Api\Marketplace\ProductCategoryController;
 use App\Http\Controllers\Api\Marketplace\ProductController;
 use App\Http\Controllers\Api\Marketplace\ProductImageController;
@@ -60,6 +64,7 @@ Route::prefix('marketplace')->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product');
     Route::get('/stores/{store:slug}', [StoreController::class, 'show']);
+    Route::get('/verified-stores', [VerifiedStoreController::class, 'index']);
 });
 
 // Búsqueda de música iTunes (público)
@@ -110,6 +115,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my/sales', [OrderController::class, 'sales']);
         Route::get('/my/store', [StoreController::class, 'mine']);
         Route::get('/my/dashboard', [StoreController::class, 'dashboard']);
+
+        // Comercios verificados: solicitud legal y conexión con PayPal.
+        Route::get('/my/verification', [MerchantVerificationController::class, 'show']);
+        Route::post('/my/verification', [MerchantVerificationController::class, 'submit'])->middleware('throttle:6,1');
+        Route::post('/my/paypal/connect', [MerchantVerificationController::class, 'connect'])->middleware('throttle:10,1');
+        Route::post('/my/paypal/refresh', [MerchantVerificationController::class, 'refresh'])->middleware('throttle:20,1');
+
+        // Pago con PayPal de productos de comercios verificados.
+        Route::prefix('paypal')->middleware('throttle:30,1')->group(function () {
+            Route::post('/quote', [PayPalCheckoutController::class, 'quote']);
+            Route::post('/orders', [PayPalCheckoutController::class, 'store']);
+            Route::post('/orders/{paypalOrderId}/capture', [PayPalCheckoutController::class, 'capture'])
+                ->where('paypalOrderId', '[A-Z0-9]{8,64}');
+        });
+
+        // Compra inteligente con Jev (TypeSafe AI).
+        Route::post('/smart-shopping', SmartShoppingController::class)->middleware('throttle:12,1');
     });
 
     // Autenticación

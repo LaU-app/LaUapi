@@ -16,7 +16,7 @@ class ProductController extends MarketplaceController
      */
     private const FILENAME_PATTERN = '/^[A-Za-z0-9\-]+\.(webp|jpe?g|png)$/';
 
-    private const RELATIONS = ['images', 'category:id,name,slug,icon', 'user:id,name,username,imagen', 'store:id,name,slug,logo'];
+    private const RELATIONS = ['images', 'category:id,name,slug,icon', 'user:id,name,username,imagen', 'store:'.\App\Models\Store::CARD_COLUMNS];
 
     private function validateProduct(Request $request, bool $creating): array
     {
