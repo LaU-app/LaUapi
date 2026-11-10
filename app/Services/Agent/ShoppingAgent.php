@@ -50,7 +50,11 @@ class ShoppingAgent
     /** Mensaje inicial cuando el chat se abre desde una búsqueda inteligente (sin gastar el modelo). */
     public function seedFromDecision(AgentConversation $conversation, AssistantDecision $decision): void
     {
-        $ids = collect($decision->candidates ?? [])->pluck('product_id')->take(4)->all();
+        // Los mismos productos que mostró la búsqueda: los que no descartó Jev (coincidencia > 0.3).
+        $ids = collect($decision->candidates ?? [])
+            ->filter(fn ($c) => ($c['match'] ?? 0) > AgentQuestions::NO)
+            ->sortByDesc('match')
+            ->pluck('product_id')->take(3)->values()->all();
         $products = Product::with('store', 'category', 'images')->whereIn('id', $ids)->where('status', 'active')->get()
             ->sortBy(fn ($p) => array_search($p->id, $ids, true))->values();
 

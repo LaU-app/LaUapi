@@ -225,10 +225,15 @@ class ShoppingAgentTest extends TestCase
         $decision = AssistantDecision::create([
             'user_id' => $this->student->id, 'query' => 'calculadora para Cálculo II', 'outcome' => 'recommendation', 'model' => 'jev',
             'budget_source' => 'none', 'answers' => [], 'recommended_product_id' => $this->calculator->id,
-            'candidates' => [['product_id' => $this->calculator->id, 'price' => '18.50', 'match' => 0.97, 'within_budget' => null]],
+            'candidates' => [
+                ['product_id' => $this->calculator->id, 'price' => '18.50', 'match' => 0.97, 'within_budget' => null],
+                // Descartado por Jev: la búsqueda no lo mostró, el chat tampoco.
+                ['product_id' => $this->productFor($this->calculator->store, ['name' => 'Cuaderno'])->id, 'price' => '3.25', 'match' => 0.02, 'within_budget' => null],
+            ],
         ]);
 
         $this->postJson('/api/marketplace/agent/conversations', ['decision_id' => $decision->id])
+            ->assertJsonCount(1, 'data.messages.1.cards.0.items')
             ->assertCreated()
             ->assertJsonPath('data.title', 'calculadora para Cálculo II')
             ->assertJsonPath('data.messages.0.content', 'calculadora para Cálculo II')
