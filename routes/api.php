@@ -68,6 +68,30 @@ Route::prefix('marketplace')->group(function () {
     Route::get('/verified-stores', [VerifiedStoreController::class, 'index']);
 });
 
+// Inicio de sesión con Google (web): el código se canjea aquí para no exponer el client secret.
+Route::post('/auth/oauth/google/token', \App\Http\Controllers\Api\GoogleOAuthController::class)->middleware('throttle:10,1');
+
+// Panel del equipo de LaU dentro de la app: revisión de comercios verificados.
+// Tokens propios del superusuario, aislados de los de estudiantes (ver AppServiceProvider).
+Route::prefix('lau-admin')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'login'])->middleware('throttle:5,1');
+
+    Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureLauAdmin::class, 'throttle:60,1'])->group(function () {
+        Route::get('/me', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'me']);
+        Route::post('/logout', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'logout']);
+
+        Route::controller(\App\Http\Controllers\Api\Admin\MerchantReviewController::class)->prefix('merchants')->group(function () {
+            Route::get('/', 'index');
+            Route::get('/{verification}', 'show')->whereNumber('verification');
+            Route::post('/{verification}/approve', 'approve')->whereNumber('verification');
+            Route::post('/{verification}/reject', 'reject')->whereNumber('verification');
+            Route::post('/{verification}/suspend', 'suspend')->whereNumber('verification');
+            Route::post('/{verification}/paypal', 'refreshPayPal')->whereNumber('verification');
+            Route::get('/{verification}/document', 'document')->whereNumber('verification');
+        });
+    });
+});
+
 // Búsqueda de música iTunes (público)
 Route::get('/music/search', [MusicSearchController::class, 'search']);
 Route::get('/music/track', [MusicSearchController::class, 'getTrack']);
@@ -134,6 +158,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Búsqueda inteligente con Jev (TypeSafe AI) y videos de reseñas filtrados por Jev.
         Route::post('/smart-shopping', SmartShoppingController::class)->middleware('throttle:12,1');
         Route::get('/products/{product}/videos', ProductVideosController::class)->whereNumber('product')->middleware('throttle:20,1');
+
+        // Agente de compras (chat con historial): modelo de lenguaje abierto + juicios de Jev.
+        Route::controller(\App\Http\Controllers\Api\Marketplace\AgentConversationController::class)->prefix('agent/conversations')->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store')->middleware('throttle:10,1');
+            Route::get('/{conversation}', 'show')->whereNumber('conversation');
+            Route::post('/{conversation}/messages', 'message')->whereNumber('conversation')->middleware('throttle:12,1');
+            Route::delete('/{conversation}', 'destroy')->whereNumber('conversation');
+        });
     });
 
     // Autenticación

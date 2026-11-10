@@ -74,6 +74,27 @@ return [
         'key' => env('YOUTUBE_API_KEY'),
     ],
 
+    // Agente de compras: modelo de lenguaje abierto con API compatible con OpenAI.
+    // Local: Ollama (http://127.0.0.1:11434/v1). Producción: el mismo tipo de modelo abierto
+    // servido por un proveedor (por ejemplo Groq). Sin base_url el chat queda deshabilitado.
+    'agent' => [
+        'base_url' => rtrim((string) env('AGENT_LLM_BASE_URL', ''), '/'),
+        'api_key' => env('AGENT_LLM_API_KEY'),
+        'model' => env('AGENT_LLM_MODEL') ?: 'qwen3.5:9b',
+        'timeout' => (int) env('AGENT_LLM_TIMEOUT', 120),
+        // Razonamiento del modelo antes de responder ("think" en Ollama, reasoning_effort en otros).
+        'reasoning' => env('AGENT_LLM_REASONING', 'low'),
+    ],
+
+    // Inicio de sesión con Google (web): el código se canjea en el servidor para que el
+    // client secret nunca llegue al navegador. El client ID es público.
+    'google_oauth' => [
+        'client_id' => env('GOOGLE_WEB_CLIENT_ID', '620970885957-jo1cvl0a27eqo51vq5d5lt45i0sd6llo.apps.googleusercontent.com'),
+        'client_secret' => env('GOOGLE_WEB_CLIENT_SECRET'),
+        // Además de FRONTEND_URL/auth/callback, separadas por coma (por ejemplo para desarrollo local).
+        'extra_redirects' => array_filter(array_map('trim', explode(',', (string) env('GOOGLE_OAUTH_EXTRA_REDIRECTS', 'http://localhost:5173/auth/callback')))),
+    ],
+
     // URL pública de la app (a dónde vuelve un comercio al terminar la conexión con PayPal).
     'frontend_url' => rtrim((string) env('FRONTEND_URL', 'https://lauapp.es'), '/'),
 

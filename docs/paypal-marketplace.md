@@ -88,6 +88,50 @@ Tabla de decisión (umbrales Noul: ≥ 0.7 sí, ≤ 0.3 no, en medio "no está c
 
 Cliente: `app/Services/TypeSafe/JevClient.php`. Hace `POST https://api.typesafe.ai/v1/systemone` con un timeout de 20 s. Reintenta solo los códigos 429 y 529 (hasta 3 intentos, respetando `Retry-After`) y una vez ante un fallo de red. Además valida el tipo, el rango y las opciones de cada respuesta.
 
+## Agente de compras (chat con historial)
+
+Un modelo de lenguaje **abierto** conversa, planifica y usa herramientas. Jev aporta los juicios y el código decide. Archivos principales:
+- `app/Services/Agent/ShoppingAgent.php`: el ciclo del agente;
+- `AgentTools.php`: las herramientas;
+- `AgentQuestions.php`: las preguntas a Jev;
+- `LlmClient.php`: el cliente compatible con OpenAI.
+
+| Paso | Quién | Qué |
+|---|---|---|
+| 1. Filtro | Jev (noul `on_topic`) | ¿El mensaje es sobre buscar, comparar o comprar productos, o sobre sus pedidos? Si es ≤ 0.3, el código responde con un texto fijo y no llama al modelo. |
+| 2. Plan y acción | LLM | Elige entre `search_products` (la búsqueda inteligente, ordenada por Jev), `get_product_details`, `get_product_reviews`, `propose_purchase` y `get_my_orders`. El código limita el ciclo a 5 pasos y 8 herramientas. |
+| 3. Verificación | Jev (2 nouls por frase) | ¿La frase afirma un dato de producto o pedido? ¿Ese dato está en `facts`, los datos reales que devolvieron las herramientas? Si afirma (≥ 0.7) algo no respaldado (≤ 0.3), el modelo corrige una vez; si sigue fallando, la frase se quita. |
+| 4. Compra | Código | `propose_purchase` valida el stock, el comercio y la cantidad, y calcula el total en centavos. El estudiante confirma en la hoja de PayPal; el agente nunca llama a PayPal. |
+
+Cada respuesta guarda en `agent_messages.meta` el modelo, las probabilidades de Jev, si hubo corrección y la duración de cada llamada al modelo. Ese campo no sale por la API del estudiante.
+
+Rutas (`auth:sanctum`), con prefijo `/api/marketplace/agent/conversations`:
+- `GET /`: historial;
+- `POST /`: crea un chat con `message`, o con `decision_id` para abrirlo desde una búsqueda, lo que arranca con esos resultados sin llamar al modelo;
+- `GET /{id}`;
+- `POST /{id}/messages`;
+- `DELETE /{id}`.
+
+Si el modelo no responde, se devuelve HTTP 503 `agent_unavailable` y no queda un turno a medias.
+
+**Modelo:**
+- **En local, Ollama:** `ollama pull qwen3.5:9b`. En GPUs de menos de 8 GB, `qwen3.5:4b` cabe entero en la GPU y responde más rápido. Conviene `OLLAMA_CONTEXT_LENGTH=8192`.
+- **En un servidor sin GPU:** el mismo tipo de modelo abierto por un proveedor compatible con OpenAI, por ejemplo Groq con `openai/gpt-oss-120b`. Solo cambian las variables `AGENT_LLM_*`.
+
+## Panel del equipo dentro de la app
+
+Hay una API para que el superusuario (`su_ad`) revise comercios desde la app, en `https://lauapp.es/equipo`:
+- `POST /api/lau-admin/login` (5 intentos por minuto) emite un token Sanctum de 8 h con la habilidad `lau-admin`;
+- las rutas de `/api/lau-admin/merchants` listan, muestran, aprueban (envía el correo), piden cambios, suspenden, consultan PayPal y descargan el documento legal.
+
+Aislamiento (`AppServiceProvider`): un token de superusuario **solo** vale en `/api/lau-admin/*`, y un token de estudiante nunca vale ahí. Los ids de las dos tablas se pisan, así que esto impide que un superusuario actúe como estudiante o al revés. El panel solo expone solicitudes de comercios.
+
+Para cambiar la contraseña de un superusuario: `php artisan lau:admin-password <correo>`. La pide de forma oculta y revoca sus sesiones. El seeder `SuperUserSeeder` toma las credenciales iniciales del `.env` (`SUPERUSER_*`), nunca del código.
+
+## Inicio de sesión con Google (web)
+
+El *client secret* ya no está en el frontend. La app web manda el código de autorización (PKCE) a `POST /api/auth/oauth/google/token`. El backend lo canjea con `GOOGLE_WEB_CLIENT_SECRET` y devuelve el access token, y la app sigue con `/auth/social-login` como antes. Solo se aceptan las redirecciones `FRONTEND_URL/auth/callback` y las de `GOOGLE_OAUTH_EXTRA_REDIRECTS`.
+
 ## Configuración (`.env`)
 
 ```text
@@ -100,6 +144,12 @@ FRONTEND_URL=https://lauapp.es # retorno del comercio tras conectar PayPal
 TYPESAFE_API_KEY=
 TYPESAFE_MODEL=jev-latest
 YOUTUBE_API_KEY=               # opcional: reseñas en video (Google Cloud → YouTube Data API v3)
+AGENT_LLM_BASE_URL=            # http://127.0.0.1:11434/v1 (Ollama) o https://api.groq.com/openai/v1
+AGENT_LLM_MODEL=               # qwen3.5:9b / qwen3.5:4b (Ollama) u openai/gpt-oss-120b (Groq)
+AGENT_LLM_API_KEY=             # solo para proveedores en la nube
+AGENT_LLM_REASONING=low        # none | low | medium | high
+GOOGLE_WEB_CLIENT_SECRET=      # inicio de sesión con Google en la web (solo servidor)
+SUPERUSER_EMAIL= / SUPERUSER_PASSWORD= / SUPERUSER_VERIFY_PASSWORD=   # solo para el seeder inicial
 ```
 
 Se siguen aceptando los nombres anteriores `PAYPAL_SANDBOX_*`. En el frontend solo se usa el
@@ -136,8 +186,8 @@ Resend no puede enviar desde una dirección `@gmail.com`, porque exige un domini
 ## Pruebas
 
 ```bash
-php artisan test --filter='PayPal|SmartShopping|JevClient|MerchantVerification|MarketplaceShowcase'
+php artisan test --filter='PayPal|SmartShopping|ShoppingAgent|ProductVideos|JevClient|MerchantVerification|AdminMerchantApi|GoogleOAuth|MarketplaceShowcase'
 RUN_TYPESAFE_LIVE=1 TYPESAFE_API_KEY=... php artisan test --filter=test_live_typesafe   # prueba real opcional
 ```
 
-Todas las llamadas a PayPal y a TypeSafe se simulan con `Http::fake()` y `Http::preventStrayRequests()`.
+Todas las llamadas a PayPal, a TypeSafe, al modelo del agente y a Google se simulan con `Http::fake()` y `Http::preventStrayRequests()`.

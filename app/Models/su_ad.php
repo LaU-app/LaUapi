@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Sanctum\HasApiTokens;
 
 class su_ad extends Authenticatable
 {
-    use HasFactory;
+    // Los tokens de superusuario solo valen en /api/lau-admin/* (ver AppServiceProvider).
+    use HasApiTokens, HasFactory;
 
     /**
      * The attributes that are mass assignable.
