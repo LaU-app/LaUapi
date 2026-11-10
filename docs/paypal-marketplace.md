@@ -21,7 +21,7 @@ Comercio                        LaU (panel /us/su/lau)            PayPal
 
 Estudiante
 ──────────
-A. Busca o pregunta a "Compra inteligente con Jev"
+A. Escribe en el buscador del Marketplace → sección "Búsqueda inteligente" arriba de los resultados normales
 B. Elige un producto → resumen (comercio, producto, precio, total) calculado por el backend
 C. Confirma explícitamente → botón oficial de PayPal (JS SDK, merchant-id del comercio)
 D. Aprueba en PayPal → el backend verifica la orden y captura (Orders v2, intent CAPTURE)
@@ -72,15 +72,19 @@ Tabla de decisión (umbrales Noul: ≥ 0.7 sí, ≤ 0.3 no, en medio "no está c
 | Condición | Resultado |
 |---|---|
 | intención < 0.3 | `not_a_purchase` |
-| intención o "dice qué producto" < 0.7 | `needs_clarification` (no busca) |
+| no dice qué producto (< 0.3) ni para qué lo necesita (< 0.7) | `needs_clarification` (no busca) |
+| dice para qué lo necesita, pero la búsqueda por palabras no encuentra nada | evalúa los últimos productos de comercios con PayPal |
 | algún candidato es lo pedido (≥ 0.7), cubre la necesidad (≥ 2/3) y entra en el presupuesto | `recommendation` |
 | hay candidatos que son lo pedido, pero ninguno entra en el presupuesto | `over_budget` |
 | solo hay candidatos dudosos (0.3–0.7) dentro del presupuesto | `confirm_choice` |
 | nada coincide | `no_match` |
 
-- **Presupuesto.** Viene del campo "Presupuesto máximo" o de una cifra que Jev identifica con claridad como tope (≥ 0.7). Una cifra dudosa no se aplica y se le dice al estudiante. Una cifra que sea "dinero a reservar" no se trata como presupuesto. El presupuesto no se guarda como saldo.
+- **Presupuesto.** Viene del campo opcional `budget` de la API o de una cifra en la búsqueda que Jev identifica con claridad como tope (≥ 0.7). Una cifra dudosa no se aplica y se le dice al estudiante. Una cifra que sea "dinero a reservar" no se trata como presupuesto. El presupuesto no se guarda como saldo.
 - **Bitácora.** Cada decisión queda en `assistant_decisions` con modelo, probabilidades y candidatos, y se puede auditar en `/us/su/lau/compra-inteligente`.
 - **Fallos.** Un fallo de Jev se trata como error (HTTP 503) y nunca se sustituye por respuestas estáticas.
+
+- **Razonamiento.** Para cada candidato, Jev elige (choice `evidence_*`) la frase de la descripción real que mejor muestra que sirve. Se cita como "Por qué te lo recomiendo" junto con razones calculadas en código: posición, presupuesto y stock bajo. Jev selecciona; no redacta.
+- **Reseñas y videos.** `GET /api/marketplace/products/{id}/videos` (`ProductVideosService`) busca en YouTube Data API v3 y le pregunta a Jev, video por video, si trata de ese tipo de producto (noul ≥ 0.7). Si no queda ninguno, responde "No encontramos videos ni reseñas de este producto". Sin `YOUTUBE_API_KEY` solo devuelve un enlace de búsqueda en YouTube. El resultado se cachea 12 h.
 
 Cliente: `app/Services/TypeSafe/JevClient.php`. Hace `POST https://api.typesafe.ai/v1/systemone` con un timeout de 20 s. Reintenta solo los códigos 429 y 529 (hasta 3 intentos, respetando `Retry-After`) y una vez ante un fallo de red. Además valida el tipo, el rango y las opciones de cada respuesta.
 
@@ -95,6 +99,7 @@ PAYPAL_BN_CODE=                # opcional
 FRONTEND_URL=https://lauapp.es # retorno del comercio tras conectar PayPal
 TYPESAFE_API_KEY=
 TYPESAFE_MODEL=jev-latest
+YOUTUBE_API_KEY=               # opcional: reseñas en video (Google Cloud → YouTube Data API v3)
 ```
 
 Se siguen aceptando los nombres anteriores `PAYPAL_SANDBOX_*`. En el frontend solo se usa el

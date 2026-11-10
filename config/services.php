@@ -69,6 +69,11 @@ return [
         'timeout' => 20,
     ],
 
+    // YouTube Data API v3 (opcional): videos de reseñas de productos. Sin clave se ofrece un enlace de búsqueda.
+    'youtube' => [
+        'key' => env('YOUTUBE_API_KEY'),
+    ],
+
     // URL pública de la app (a dónde vuelve un comercio al terminar la conexión con PayPal).
     'frontend_url' => rtrim((string) env('FRONTEND_URL', 'https://lauapp.es'), '/'),
 

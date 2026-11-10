@@ -35,7 +35,12 @@ class SmartShoppingService
         'necesito', 'quiero', 'busco', 'comprar', 'para', 'pero', 'como', 'algo', 'tengo', 'debo', 'mucho', 'poco',
         'unos', 'unas', 'este', 'esta', 'esos', 'esas', 'porque', 'presupuesto', 'maximo', 'dolares', 'dolar',
         'barato', 'barata', 'precio', 'cuesta', 'gastar', 'reservar', 'tiene', 'sirva', 'mejor', 'favor',
+        'buscar', 'busca', 'podes', 'puedes', 'podrias', 'ayuda', 'ayudame', 'recomiendas', 'recomienda', 'recomendar',
+        'clase', 'clases', 'materia', 'materias', 'universidad', 'carrera',
     ];
+
+    /** Dónde escribe el estudiante: le da a Jev el mismo contexto que vería una persona. */
+    public const CONTEXT = 'A university student in El Salvador typed `request` into the search box of LaU Marketplace, a store where verified local businesses sell to students.';
 
     public function __construct(private readonly JevClient $jev) {}
 
@@ -49,6 +54,7 @@ class SmartShoppingService
         // 1) Entender la solicitud.
         $understand = $this->jev->ask(
             array_filter([
+                'context' => self::CONTEXT,
                 'request' => $query,
                 'categories' => $categories->mapWithKeys(fn ($c) => [$c->slug => "{$c->name}: {$c->description}"])->all(),
                 'money_mentions' => $mentions ?: null,
@@ -61,6 +67,7 @@ class SmartShoppingService
 
         $intent = $understand->noul('purchase_intent');
         $itemNamed = $understand->noul('item_named');
+        $needDescribed = $understand->noul('need_described');
         $category = $understand->choice('category');
         $categoryExists = $understand->noul('category_exists');
         $budget = $this->budget($understand, $mentions, $maxBudget);
@@ -85,39 +92,51 @@ class SmartShoppingService
         $answers = ['understand' => $understand->answers];
         $base = compact('query', 'budget', 'interpretation', 'categorySlug');
 
-        // Tabla de decisión, parte 1: ¿se puede buscar?
+        // Tabla de decisión, parte 1: ¿se puede buscar? Es el buscador del Marketplace, así que
+        // se busca salvo que claramente no sea una compra o que no haya ni producto ni necesidad.
         if ($intent < SmartShoppingQuestions::NO) {
             return $this->finish($user, $base, 'not_a_purchase', $understand->model, $answers, collect());
         }
-        if ($intent < SmartShoppingQuestions::YES || $itemNamed < SmartShoppingQuestions::YES) {
+        $vague = $itemNamed < SmartShoppingQuestions::NO && $needDescribed < SmartShoppingQuestions::YES;
+        if ($vague) {
             return $this->finish($user, $base, 'needs_clarification', $understand->model, $answers, collect());
         }
 
         // 2) Candidatos reales del catálogo (solo comercios verificados que aceptan PayPal).
-        $candidates = $this->candidates($query, $categorySlug ? $categories->firstWhere('slug', $categorySlug)?->id : null);
+        $candidates = $this->candidates(
+            $query,
+            $categorySlug ? $categories->firstWhere('slug', $categorySlug)?->id : null,
+            // Si describe para qué lo necesita, Jev puede juzgar el catálogo reciente aunque no haya palabras en común.
+            broad: $needDescribed >= SmartShoppingQuestions::YES,
+        );
         if ($candidates->isEmpty()) {
-            return $this->finish($user, $base, 'no_match', $understand->model, $answers, collect());
+            $outcome = $itemNamed < SmartShoppingQuestions::YES ? 'needs_clarification' : 'no_match';
+
+            return $this->finish($user, $base, $outcome, $understand->model, $answers, collect());
         }
 
         $keyed = $candidates->mapWithKeys(fn (Product $p) => [self::candidateKey($p) => $p]);
+        // Frases reales de cada descripción: Jev elige la que mejor justifica la recomendación.
+        $parts = $keyed->map(fn (Product $p) => self::descriptionParts($p->description))->all();
 
         // 3) Jev juzga cada candidato frente a la necesidad. El precio no se envía: el
         //    presupuesto lo compara el código.
         $evaluation = $this->jev->ask(
             [
+                'context' => self::CONTEXT,
                 'request' => $query,
-                'candidates' => $keyed->map(fn (Product $p) => [
+                'candidates' => $keyed->map(fn (Product $p, string $key) => array_filter([
                     'name' => $p->name,
-                    'description' => Str::limit((string) $p->description, 300),
                     'category' => $p->category?->name,
                     'store' => $p->store?->name,
-                ])->all(),
+                    'description_parts' => $parts[$key] ?: null,
+                ]))->all(),
             ],
-            SmartShoppingQuestions::evaluate($keyed->map(fn (Product $p) => $p->name)->all()),
+            SmartShoppingQuestions::evaluate($keyed->map(fn (Product $p) => $p->name)->all(), $parts),
         );
         $answers['evaluate'] = $evaluation->answers;
 
-        $scored = $this->score($keyed, $evaluation, $budget['amount']);
+        $scored = $this->score($keyed, $evaluation, $budget['amount'], $parts);
 
         return $this->finish($user, $base, $this->decide($scored), $evaluation->model, $answers, $scored);
     }
@@ -141,20 +160,30 @@ class SmartShoppingService
         };
     }
 
-    private function score(Collection $keyed, JevResult $evaluation, ?string $budget): Collection
+    private function score(Collection $keyed, JevResult $evaluation, ?string $budget, array $parts): Collection
     {
         $budgetCents = $budget !== null ? PayPalCheckoutService::cents($budget) : null;
         $best = $evaluation->has('best') ? $evaluation->choice('best')['probabilities'] : [];
 
         $single = $keyed->count() === 1;
 
-        return $keyed->map(function (Product $product, string $key) use ($evaluation, $budgetCents, $best, $single) {
+        return $keyed->map(function (Product $product, string $key) use ($evaluation, $budgetCents, $best, $single, $parts) {
             $match = $evaluation->noul('match_'.$key);
             $fit = $evaluation->score('fit_'.$key);
             $academic = $evaluation->score('academic_'.$key);
             $priceCents = PayPalCheckoutService::cents($product->price);
 
+            // Frase de la descripción real que Jev eligió como la que mejor responde a la búsqueda.
+            $highlight = null;
+            if ($evaluation->has('evidence_'.$key) && $match >= SmartShoppingQuestions::NO) {
+                $evidence = $evaluation->choice('evidence_'.$key);
+                if (($evidence['probabilities'][$evidence['choice']] ?? 0) >= SmartShoppingQuestions::EVIDENCE_MIN) {
+                    $highlight = $parts[$key][$evidence['choice']] ?? null;
+                }
+            }
+
             return [
+                'highlight' => $highlight,
                 'key' => $key,
                 'product' => $product,
                 'match' => $match,
@@ -174,7 +203,7 @@ class SmartShoppingService
     }
 
     /** Productos reales que pueden pagarse con PayPal, priorizando categoría y palabras de la consulta. */
-    private function candidates(string $query, ?int $categoryId): Collection
+    private function candidates(string $query, ?int $categoryId, bool $broad = false): Collection
     {
         $base = fn () => Product::available()
             ->whereHas('store', fn ($q) => $q->acceptingPaypal())
@@ -201,6 +230,11 @@ class SmartShoppingService
             $others = $rank($base()->when($categoryId, fn ($q) => $q->where('category_id', '!=', $categoryId))
                 ->latest()->limit(200)->get())->filter(fn ($p) => $p->_hits > 0);
             $pool = $pool->concat($others);
+        }
+
+        // Sin candidatos por categoría ni por palabras: los más recientes, para que Jev juzgue cuáles sirven.
+        if ($pool->isEmpty() && $broad) {
+            $pool = $rank($base()->latest()->limit(self::MAX_CANDIDATES)->get());
         }
 
         return $pool->unique('id')
@@ -280,13 +314,18 @@ class SmartShoppingService
                 'product' => [
                     'id' => $c['product']->id,
                     'name' => $c['product']->name,
-                    'description' => Str::limit((string) $c['product']->description, 180),
+                    'description' => Str::limit((string) $c['product']->description, 400),
                     'price' => PayPalCheckoutService::money($c['price_cents']),
                     'currency' => PayPalCheckoutService::CURRENCY,
                     'stock' => $c['product']->stock,
                     'image_url' => $c['product']->images->first()?->url,
                     'category' => $c['product']->category?->name,
+                    'condition' => $c['product']->condition,
+                    'delivery_point' => $c['product']->delivery_point,
                 ],
+                // Por qué se recomienda: la frase que eligió Jev y razones calculadas por el código.
+                'highlight' => $c['highlight'],
+                'reasons' => SmartShoppingCopy::reasons($c, $recommended, $scored->count(), $base['budget']['amount']),
                 'store' => [
                     'name' => $c['product']->store->name,
                     'slug' => $c['product']->store->slug,
@@ -302,6 +341,36 @@ class SmartShoppingService
             ])->all(),
             'message' => SmartShoppingCopy::for($outcome, $base, $recommended, $scored),
         ];
+    }
+
+    /**
+     * Frases de la descripción del producto (hasta 6) con nombres de opción descriptivos.
+     *
+     * @return array<string, string>
+     */
+    public static function descriptionParts(?string $description): array
+    {
+        $sentences = preg_split('/(?<=[.!?;:])\s+|\R+/u', trim((string) $description)) ?: [];
+        $parts = [];
+
+        foreach ($sentences as $sentence) {
+            // Sin el ";" o ":" final que deja la separación de frases.
+            $sentence = rtrim(trim($sentence), ';: ');
+            if (mb_strlen($sentence) < 12) {
+                continue;
+            }
+            $key = Str::limit(Str::slug($sentence, '_'), 32, '') ?: 'parte';
+            $base = $key;
+            for ($i = 2; isset($parts[$key]); $i++) {
+                $key = $base.'_'.$i;
+            }
+            $parts[$key] = Str::limit($sentence, 220);
+            if (count($parts) === 6) {
+                break;
+            }
+        }
+
+        return $parts;
     }
 
     /** Cifras de dinero tal como aparecen en el texto ($25, 25 dólares, US$ 12.50). */
@@ -328,9 +397,15 @@ class SmartShoppingService
     {
         $words = preg_split('/[^a-z0-9]+/', Str::ascii(Str::lower($query))) ?: [];
 
-        return array_values(array_unique(array_filter(
+        $terms = array_filter(
             $words,
             fn ($w) => strlen($w) >= 4 && ! ctype_digit($w) && ! in_array($w, self::STOPWORDS, true)
+        );
+
+        // Plural a singular simple ("matematicas" → "matematica") para que coincida con ambas formas.
+        return array_values(array_unique(array_map(
+            fn ($w) => strlen($w) > 4 && str_ends_with($w, 's') ? substr($w, 0, -1) : $w,
+            $terms
         )));
     }
 

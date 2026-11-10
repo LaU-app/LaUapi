@@ -29,19 +29,19 @@ final class SmartShoppingCopy
             ],
             'confirm_choice' => [
                 'title' => '¿Te sirve alguna de estas?',
-                'body' => ['Se parecen a lo que pediste, pero no estoy seguro. Si no, contame más detalles.'],
+                'body' => ['Se parecen a lo que buscás, pero no estoy seguro. Describí el producto para afinar la búsqueda.'],
             ],
             'no_match' => [
                 'title' => 'No encontré eso en comercios verificados',
                 'body' => ['Probá con otras palabras o algo más general.'],
             ],
             'needs_clarification' => [
-                'title' => 'Contame un poco más',
-                'body' => ['¿Qué producto necesitás? Por ejemplo: «calculadora científica para Cálculo I».'],
+                'title' => 'Describí el producto que necesitás',
+                'body' => ['Por ejemplo: «calculadora científica para Cálculo I, máximo $25».'],
             ],
             default => [
-                'title' => 'Te ayudo a comprar en LaU',
-                'body' => ['Decime qué necesitás y, si querés, tu presupuesto máximo.'],
+                'title' => 'Buscá un producto',
+                'body' => ['Escribí qué necesitás y, si querés, tu presupuesto máximo.'],
             ],
         };
 
@@ -50,5 +50,41 @@ final class SmartShoppingCopy
         }
 
         return $copy + ['clarification' => null];
+    }
+
+    /**
+     * Razones de una recomendación, calculadas con datos del catálogo y las decisiones tomadas.
+     *
+     * @return list<string>
+     */
+    public static function reasons(array $candidate, ?array $recommended, int $evaluated, ?string $budget): array
+    {
+        $reasons = [];
+        $isTop = $recommended !== null && $recommended['product']->id === $candidate['product']->id;
+
+        if ($isTop) {
+            $reasons[] = $evaluated > 1
+                ? "Es la que mejor coincide entre {$evaluated} productos de comercios verificados."
+                : 'Es el producto de comercios verificados que coincide con tu búsqueda.';
+        } elseif ($candidate['eligible']) {
+            $reasons[] = 'También coincide con lo que buscás.';
+        } elseif ($candidate['uncertain']) {
+            $reasons[] = 'Se parece a lo que buscás; revisá si te sirve.';
+        }
+
+        if ($budget !== null && $candidate['within_budget'] !== null) {
+            $budgetCents = PayPalCheckoutService::cents($budget);
+            $diff = abs($budgetCents - $candidate['price_cents']);
+            $reasons[] = $candidate['within_budget']
+                ? 'Entra en tu presupuesto de $'.$budget.($diff > 0 ? ' y te sobran $'.PayPalCheckoutService::money($diff).'.' : '.')
+                : 'Supera tu presupuesto de $'.$budget.' por $'.PayPalCheckoutService::money($diff).'.';
+        }
+
+        $stock = (int) $candidate['product']->stock;
+        if ($stock > 0 && $stock <= 3) {
+            $reasons[] = $stock === 1 ? 'Queda 1 sola unidad.' : "Quedan solo {$stock} unidades.";
+        }
+
+        return $reasons;
     }
 }

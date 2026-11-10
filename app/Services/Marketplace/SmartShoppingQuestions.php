@@ -22,6 +22,9 @@ final class SmartShoppingQuestions
     /** Puntaje mínimo de "cubre la necesidad" (escala 0–3) para recomendar sin preguntar. */
     public const FIT_MIN = 2.0;
 
+    /** Probabilidad mínima para mostrar la frase de la descripción que eligió Jev como evidencia. */
+    public const EVIDENCE_MIN = 0.4;
+
     public const FIT_LEVELS = [
         'It would not help with this need',
         'It helps a little, but the student would still need something else',
@@ -65,6 +68,14 @@ final class SmartShoppingQuestions
                     'false' => 'It only says the student wants to buy something, for example "quiero comprar algo barato".',
                 ],
             ],
+            'need_described' => [
+                'type' => 'noul',
+                'instructions' => 'Does `request` say what the student needs the item for, such as a course, a class or a project?',
+                'criteria' => [
+                    'true' => 'It names a use, for example "algo para mis clases de matemáticas" or "para el laboratorio de Química".',
+                    'false' => 'It gives no use, for example "algo barato" or just a greeting.',
+                ],
+            ],
             'category' => [
                 'type' => 'choice',
                 'instructions' => 'Which category in `categories` would sell what the student asks for in `request`?',
@@ -100,12 +111,21 @@ final class SmartShoppingQuestions
      * Cada candidato tiene sus propias preguntas (no se le pide a Jev buscar en una lista).
      *
      * @param  array<string, string>  $candidateNames  clave => nombre del producto
+     * @param  array<string, array<string, string>>  $descriptionParts  clave => frases reales de su descripción
      */
-    public static function evaluate(array $candidateNames): array
+    public static function evaluate(array $candidateNames, array $descriptionParts = []): array
     {
         $questions = [];
 
         foreach (array_keys($candidateNames) as $key) {
+            // Seleccionar en vez de generar: Jev elige una frase real de la descripción.
+            if (! empty($descriptionParts[$key])) {
+                $questions['evidence_'.$key] = [
+                    'type' => 'choice',
+                    'instructions' => "Which part of `candidates.{$key}.description_parts` best shows that this product fits what the student needs in `request`?",
+                    'criteria' => $descriptionParts[$key],
+                ];
+            }
             $questions['match_'.$key] = [
                 'type' => 'noul',
                 'instructions' => "Is `candidates.{$key}` the kind of item the student asks for in `request`?",

@@ -90,6 +90,63 @@ class SmartShoppingTest extends TestCase
         });
     }
 
+    public function test_explains_the_recommendation_with_a_real_description_sentence_and_reasons(): void
+    {
+        $this->calculator->update(['description' => 'Pantalla de dos líneas y 417 funciones. Ideal para Cálculo I y Física.', 'stock' => 2]);
+        $this->fakeJev();
+
+        $response = $this->postJson('/api/marketplace/smart-shopping', [
+            'query' => 'Necesito una calculadora para Cálculo', 'max_budget' => 25,
+        ])->assertOk();
+
+        $top = $response->json('data.recommendations.0');
+        // La frase sale de la descripción real; Jev solo la eligió.
+        $this->assertSame('Ideal para Cálculo I y Física.', $top['highlight']);
+        $this->assertContains('Entra en tu presupuesto de $25.00 y te sobran $6.50.', $top['reasons']);
+        $this->assertContains('Quedan solo 2 unidades.', $top['reasons']);
+        $this->assertStringStartsWith('Es la que mejor coincide entre', $top['reasons'][0]);
+        $this->assertSame(2, $top['product']['stock']);
+
+        Http::assertSent(fn (Request $r) => isset($r['state']['candidates'])
+            && $r['state']['context'] === \App\Services\Marketplace\SmartShoppingService::CONTEXT
+            && collect($r['questions'])->keys()->contains(fn ($k) => str_starts_with($k, 'evidence_')));
+    }
+
+    public function test_searches_when_the_student_describes_a_need_without_naming_an_item(): void
+    {
+        $this->fakeJev(itemNamed: 0.2, needDescribed: 0.9);
+
+        $this->postJson('/api/marketplace/smart-shopping', ['query' => 'algo para mis clases de Cálculo'])
+            ->assertOk()
+            ->assertJsonPath('data.outcome', 'recommendation');
+
+        $this->assertSame(2, Http::recorded()->filter(fn ($pair) => $pair[0]->url() === self::JEV)->count());
+    }
+
+    public function test_described_need_without_shared_words_lets_jev_judge_recent_products(): void
+    {
+        // Ni categoría clara ni palabras en común: Jev juzga los productos recientes de comercios verificados.
+        $this->fakeJev(itemNamed: 0.42, needDescribed: 0.99, categoryExists: 0.2);
+
+        $this->postJson('/api/marketplace/smart-shopping', ['query' => '¿me ayudás con algo para mis clases?'])
+            ->assertOk()
+            ->assertJsonPath('data.outcome', 'recommendation')
+            ->assertJsonPath('data.recommendations.0.product.id', $this->calculator->id);
+
+        Http::assertSent(fn (Request $r) => isset($r['state']['candidates']) && count($r['state']['candidates']) === 2);
+    }
+
+    public function test_plural_words_match_singular_product_text(): void
+    {
+        $this->notebook->update(['description' => '100 hojas, ideal para apuntes de Matemática.']);
+        $this->fakeJev(categoryExists: 0.2);
+
+        $this->postJson('/api/marketplace/smart-shopping', ['query' => 'cuaderno para matemáticas'])->assertOk();
+
+        Http::assertSent(fn (Request $r) => isset($r['state']['candidates'])
+            && collect(array_keys($r['state']['candidates']))->contains(fn ($k) => str_ends_with($k, '_p'.$this->notebook->id)));
+    }
+
     public function test_reads_the_maximum_budget_from_the_message_and_reports_over_budget(): void
     {
         $this->fakeJev(budgetRole: ['maximum_price' => 0.92, 'money_to_keep' => 0.05, 'other_amount' => 0.03]);
@@ -227,11 +284,11 @@ class SmartShoppingTest extends TestCase
      *
      * @param  array<int, float>  $match  probabilidad "es lo que pide" por id de producto
      */
-    private function fakeJev(float $intent = 0.95, float $itemNamed = 0.93, array $match = [], array $budgetRole = []): void
+    private function fakeJev(float $intent = 0.95, float $itemNamed = 0.93, array $match = [], array $budgetRole = [], float $needDescribed = 0.2, float $categoryExists = 0.9): void
     {
         $match += [$this->calculator->id => 0.95, $this->notebook->id => 0.06];
 
-        Http::fake([self::JEV => function (Request $request) use ($intent, $itemNamed, $match, $budgetRole) {
+        Http::fake([self::JEV => function (Request $request) use ($intent, $itemNamed, $match, $budgetRole, $needDescribed, $categoryExists) {
             $answers = [];
             foreach ($request['questions'] as $key => $question) {
                 $productId = preg_match('/_p(\d+)$/', $key, $m) ? (int) $m[1] : null;
@@ -239,7 +296,10 @@ class SmartShoppingTest extends TestCase
                 $answers[$key] = match (true) {
                     $key === 'purchase_intent' => ['type' => 'noul', 'noul' => $intent],
                     $key === 'item_named' => ['type' => 'noul', 'noul' => $itemNamed],
-                    $key === 'category_exists' => ['type' => 'noul', 'noul' => 0.9],
+                    $key === 'need_described' => ['type' => 'noul', 'noul' => $needDescribed],
+                    // Evidencia: Jev elige la última frase de la descripción (la que menciona Cálculo).
+                    Str::startsWith($key, 'evidence_') => $this->choice(array_keys($question['criteria']), array_key_last($question['criteria']), 0.82),
+                    $key === 'category_exists' => ['type' => 'noul', 'noul' => $categoryExists],
                     $key === 'category' => $this->choice(array_keys($question['criteria']), 'electronica', 0.88),
                     Str::startsWith($key, 'budget_role_') => $this->choice(array_keys($question['criteria']), null, 0, $budgetRole ?: ['maximum_price' => 0.9, 'money_to_keep' => 0.05, 'other_amount' => 0.05]),
                     Str::startsWith($key, 'match_') => ['type' => 'noul', 'noul' => $match[$productId] ?? 0.1],

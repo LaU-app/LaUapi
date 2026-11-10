@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\Marketplace\OrderController;
 use App\Http\Controllers\Api\Marketplace\MerchantVerificationController;
 use App\Http\Controllers\Api\Marketplace\PayPalCheckoutController;
+use App\Http\Controllers\Api\Marketplace\ProductVideosController;
 use App\Http\Controllers\Api\Marketplace\SmartShoppingController;
 use App\Http\Controllers\Api\Marketplace\VerifiedStoreController;
 use App\Http\Controllers\Api\Marketplace\ProductCategoryController;
@@ -130,8 +131,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->where('paypalOrderId', '[A-Z0-9]{8,64}');
         });
 
-        // Compra inteligente con Jev (TypeSafe AI).
+        // Búsqueda inteligente con Jev (TypeSafe AI) y videos de reseñas filtrados por Jev.
         Route::post('/smart-shopping', SmartShoppingController::class)->middleware('throttle:12,1');
+        Route::get('/products/{product}/videos', ProductVideosController::class)->whereNumber('product')->middleware('throttle:20,1');
     });
 
     // Autenticación
