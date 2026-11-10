@@ -71,7 +71,14 @@ return [
 
     // YouTube Data API v3 (opcional): videos de reseñas de productos. Sin clave se ofrece un enlace de búsqueda.
     'youtube' => [
-        'key' => env('YOUTUBE_API_KEY'),
+        'key' => env('YOUTUBE_API_KEY') ?: env('GOOGLE_SERVER_KEY'),
+    ],
+
+    // Clave de servidor de Google Cloud (restringida por IP y por API): Places API (ubicar campus),
+    // Cloud Vision (buscar el producto por su foto) y, si no hay otra, YouTube Data API.
+    'google' => [
+        'server_key' => env('GOOGLE_SERVER_KEY'),
+        'vision_key' => env('GOOGLE_VISION_API_KEY') ?: env('GOOGLE_SERVER_KEY'),
     ],
 
     // Agente de compras: modelo de lenguaje abierto con API compatible con OpenAI.

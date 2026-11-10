@@ -40,13 +40,16 @@ class MarketplaceDemoAccounts extends Command
         }
 
         $student = User::firstOrNew(['email' => MarketplaceShowcaseSeeder::STUDENT_EMAIL]);
+        // Estudiante y comercio de la demo en el mismo campus que la vitrina.
+        $campusId = MarketplaceShowcaseSeeder::demoCampusId();
         $student->forceFill([
             'name' => $student->name ?: 'Estudiante Demo',
             'username' => $student->username ?: 'estudiante_demo',
             'password' => Hash::make($password),
+            'universidad_id' => $student->universidad_id ?: $campusId,
         ])->save();
 
-        $store->user->forceFill(['password' => Hash::make($password)])->save();
+        $store->user->forceFill(['password' => Hash::make($password), 'universidad_id' => $store->user->universidad_id ?: $campusId])->save();
 
         $this->info('Cuentas de demostración listas:');
         $this->line('  Estudiante (compra):  '.$student->email);

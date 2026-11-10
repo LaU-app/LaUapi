@@ -13,10 +13,10 @@ class Product extends Model
     // $request->user()->products()->create(...), nunca del payload.
     protected $fillable = [
         'store_id', 'category_id', 'universidad_id', 'name', 'description',
-        'price', 'stock', 'status', 'condition', 'delivery_point',
+        'price', 'stock', 'status', 'condition', 'delivery_point', 'delivery_lat', 'delivery_lng',
     ];
 
-    protected $casts = ['price' => 'decimal:2', 'stock' => 'integer'];
+    protected $casts = ['price' => 'decimal:2', 'stock' => 'integer', 'delivery_lat' => 'float', 'delivery_lng' => 'float'];
 
     protected $appends = ['is_available'];
 

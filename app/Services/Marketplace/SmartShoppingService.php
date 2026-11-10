@@ -207,7 +207,7 @@ class SmartShoppingService
     {
         $base = fn () => Product::available()
             ->whereHas('store', fn ($q) => $q->acceptingPaypal())
-            ->with(['images', 'category:id,name,slug', 'store:'.\App\Models\Store::CARD_COLUMNS.',is_active,description']);
+            ->with(['images', 'category:id,name,slug', 'store:'.\App\Models\Store::CARD_COLUMNS.',is_active,description', 'universidad:id,nombre,siglas']);
 
         $terms = self::terms($query);
         $rank = function (Collection $products) use ($terms) {
@@ -322,6 +322,8 @@ class SmartShoppingService
                     'category' => $c['product']->category?->name,
                     'condition' => $c['product']->condition,
                     'delivery_point' => $c['product']->delivery_point,
+                    // Campus donde se entrega (todo se entrega dentro de un campus).
+                    'campus' => $c['product']->universidad ? ($c['product']->universidad->siglas ?: $c['product']->universidad->nombre) : null,
                 ],
                 // Por qué se recomienda: la frase que eligió Jev y razones calculadas por el código.
                 'highlight' => $c['highlight'],

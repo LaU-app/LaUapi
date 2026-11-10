@@ -37,8 +37,14 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
 4. **PayPal checkout to the right merchant.** The backend computes price and total and creates an **Orders v2** order with the merchant as `payee`. The student approves it with the **PayPal JS SDK**. The backend then verifies the order with PayPal and captures it. A paid LaU order exists only after PayPal confirms the capture as `COMPLETED`.
 5. **AI shopping agent with chat history.** From the smart search, the student opens a chat with an agent. The agent is an open-weight LLM with tools, and Jev supplies typed judgments and checks each reply against real data. It searches, compares, finds reviews, checks orders and prepares a purchase that the student confirms in PayPal. See [Agentic commerce](#agentic-commerce-an-open-llm-agent-with-jev-as-its-judgment-layer).
 6. **After the sale.** The order shows as **"Pagado"** for both buyer and seller. The buyer can message the seller, and the product is quoted as a rich preview above the message.
-7. **Students sell too.** A student without a registered business still gets a personal seller dashboard under their own name. Verification is what unlocks a store name and PayPal payments.
-8. **LaU team panel inside the app** (`/equipo`). LaU staff log in with a separate, short-lived admin session that only works on the review API. They approve, request changes, suspend or re-check PayPal for each merchant. It shows only merchant applications, never other users' data.
+7. **Campus-only delivery, with a 3D campus map.** Every product is delivered **inside a university campus**, so no one has to meet a stranger somewhere else in the country.
+   - The seller picks the campus and can drop an exact pin. The server rejects pins outside the campus delivery radius.
+   - Students browse **their campus** by default. A **3D map of El Salvador's universities** shows products, verified stores and business fairs per campus, plus "Where am I?" via GPS (`@capacitor/geolocation`).
+   - The LaU team creates **campus fairs**, and each fair gets an announcement shown only to students of that campus.
+   - Campus locations come from Google Places, and **Jev picks which candidate is the actual campus**. If Jev is unsure, nothing is saved and a person decides.
+8. **The product on the web, by its photo.** Google Cloud Vision (*Web Detection*) finds pages that show the product photo. **Jev keeps only pages about the same product.** The agent can use this too (`find_product_on_web`).
+9. **Students sell too.** A student without a registered business still gets a personal seller dashboard under their own name. Verification is what unlocks a store name and PayPal payments.
+10. **LaU team panel inside the app** (`/equipo`). LaU staff log in with a separate, short-lived admin session that only works on the review API. They approve, request changes, suspend or re-check PayPal for each merchant. It shows only merchant applications, never other users' data.
 
 ## What we built during the hackathon
 
@@ -49,7 +55,8 @@ LaU existed before the Submission Period (Oct 1, 2026). It had the social feed, 
 - AI-powered search with Jev;
 - the AI shopping agent with chat history;
 - YouTube reviews filtered by Jev;
-- the merchant landing page and the LaU team panel.
+- the merchant landing page and the LaU team panel;
+- campus-only delivery, the 3D campus map, campus fairs with targeted announcements, and finding the product on the web by its photo.
 
 The commit history of both repositories shows this work.
 
@@ -220,7 +227,7 @@ Use **two browsers, or one normal window and one private window**, so you can be
 | Meaningful AI | Jev (TypeSafe AI) drives the smart search: understanding, candidate evaluation, selection and evidence. An open-weight LLM agent (Qwen 3.5 / gpt-oss) plans and uses tools, with Jev gating and fact-checking every reply. All of it has an auditable log |
 | Working prototype | Hosted at lauapp.es; end-to-end purchase with real PayPal Sandbox payments |
 | Documentation | This file, `docs/paypal-marketplace.md` (backend) and inline code docs |
-| Tools disclosed | PayPal APIs and JS SDK; Jev by TypeSafe AI (judgments); Qwen 3.5 via Ollama, or an open-weight model via Groq on the hosted demo (agent LLM); YouTube Data API v3 (reviews); Claude Code (development assistant) |
+| Tools disclosed | PayPal APIs and JS SDK; Jev by TypeSafe AI (judgments); Qwen 3.5 via Ollama, or an open-weight model via Groq on the hosted demo (agent LLM); YouTube Data API v3 (reviews); Google Cloud Vision Web Detection (product photo → web pages); Google Maps JavaScript API with 3D Maps (preview) and Places API (New) (campus map and locations); `@capacitor/geolocation` (GPS); Claude Code (development assistant) |
 | Existing project, significant update | See [What we built during the hackathon](#what-we-built-during-the-hackathon) |
 | Public repo + license | MIT license (see `LICENSE`) |
 | Demo video | Pending (under 3 minutes, YouTube) |

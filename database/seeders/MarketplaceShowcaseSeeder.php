@@ -26,8 +26,16 @@ class MarketplaceShowcaseSeeder extends Seeder
     /** Cuenta LaU de estudiante para probar compras (la crea marketplace:demo-accounts). */
     public const STUDENT_EMAIL = 'estudiante.demo@lauapp.es';
 
+    /** Campus de la vitrina: todo se entrega dentro de un campus (por defecto, la UES). */
+    public static function demoCampusId(): ?int
+    {
+        return \App\Models\Universidad::where('dominio', 'ues.edu.sv')->value('id')
+            ?? \App\Models\Universidad::orderBy('id')->value('id');
+    }
+
     public function run(): void
     {
+        $campusId = self::demoCampusId();
         $this->call(ProductCategorySeeder::class);
         $category = fn (string $slug) => ProductCategory::where('slug', $slug)->value('id');
 
@@ -64,7 +72,8 @@ class MarketplaceShowcaseSeeder extends Seeder
             $product = Product::withTrashed()->firstOrNew(['store_id' => $papeleria->id, 'name' => $name]);
             $product->fill([
                 'category_id' => $category($slug), 'description' => $description, 'price' => $price,
-                'stock' => $stock, 'status' => 'active', 'condition' => $condition, 'delivery_point' => 'Entrega en tu campus',
+                'stock' => $stock, 'status' => 'active', 'condition' => $condition, 'delivery_point' => 'Entrada principal del campus',
+                'universidad_id' => $campusId,
             ]);
             $product->user_id = $papeleria->user_id;
             $product->deleted_at = null;

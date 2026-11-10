@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Marketplace\PayPalCheckoutService;
 use App\Services\Marketplace\ProductVideosService;
+use App\Services\Marketplace\ProductWebLinksService;
 use App\Services\Marketplace\SmartShoppingService;
 use App\Services\TypeSafe\JevException;
 use Illuminate\Support\Str;
@@ -26,6 +27,7 @@ final class AgentTools
         'search_products' => 'Buscó en comercios verificados',
         'get_product_details' => 'Revisó el detalle del producto',
         'get_product_reviews' => 'Buscó reseñas y videos',
+        'find_product_on_web' => 'Buscó el producto en la web por su foto',
         'propose_purchase' => 'Preparó la compra',
         'get_my_orders' => 'Revisó tus pedidos',
     ];
@@ -36,6 +38,7 @@ final class AgentTools
     public function __construct(
         private readonly SmartShoppingService $search,
         private readonly ProductVideosService $videos,
+        private readonly ProductWebLinksService $web,
     ) {}
 
     /** Definiciones en formato OpenAI (type=function). */
@@ -54,6 +57,9 @@ final class AgentTools
             self::fn('get_product_reviews', 'Busca reseñas y videos de YouTube sobre un producto. Dice claramente si no hay.', [
                 'product_id' => $productId,
             ], ['product_id']),
+            self::fn('find_product_on_web', 'Busca el producto en otros sitios web a partir de su foto (tiendas, fichas técnicas, reseñas escritas). Dice claramente si no hay.', [
+                'product_id' => $productId,
+            ], ['product_id']),
             self::fn('propose_purchase', 'Prepara la compra de un producto: la app le muestra al estudiante un resumen y el botón de PayPal para que él confirme y pague. Usala cuando el estudiante diga que quiere comprar.', [
                 'product_id' => $productId,
                 'quantity' => ['type' => 'integer', 'description' => 'Unidades (1 si no lo dijo)'],
@@ -70,6 +76,7 @@ final class AgentTools
                 'search_products' => $this->searchProducts($user, $args),
                 'get_product_details' => $this->productDetails($args),
                 'get_product_reviews' => $this->productReviews($args),
+                'find_product_on_web' => $this->productOnWeb($args),
                 'propose_purchase' => $this->proposePurchase($user, $args),
                 'get_my_orders' => $this->myOrders($user),
                 default => self::error('Esa herramienta no existe.'),
@@ -154,6 +161,7 @@ final class AgentTools
                 'condition' => $product->condition,
                 'category' => $product->category?->name,
                 'delivery_point' => $product->delivery_point,
+                'delivery_campus' => $product->universidad?->nombre,
                 'store' => $product->store?->name,
                 'store_verified' => (bool) $product->store?->is_verified,
                 'accepts_paypal' => (bool) $product->store?->accepts_paypal,
@@ -172,21 +180,40 @@ final class AgentTools
 
         $videos = $this->videos->for($product);
         $list = collect($videos['videos'] ?? [])->map(fn ($v) => ['title' => $v['title'] ?? '', 'channel' => $v['channel'] ?? ''])->all();
+        // En palabras para el modelo: nunca un estado técnico que pueda repetirle al estudiante.
+        $summary = match ($videos['status']) {
+            'found' => count($list).' video(s) de reseña sobre este producto. La app los muestra en una tarjeta.',
+            'none' => 'No hay videos ni reseñas de este producto en YouTube.',
+            default => 'Ahora no se pudieron revisar videos. La app le muestra un enlace para buscarlos en YouTube.',
+        };
 
         return [
-            'result' => [
-                'product_id' => $product->id,
-                'status' => $videos['status'],
-                'videos' => $list,
-                'message' => $videos['message'] ?? null,
-            ],
-            'facts' => ['reviews_p'.$product->id => [
-                'product' => $product->name,
-                'status' => $videos['status'],
-                'videos' => $list,
-                'message' => $videos['message'] ?? null,
-            ]],
+            'result' => ['product_id' => $product->id, 'summary' => $summary, 'videos' => $list],
+            'facts' => ['reviews_p'.$product->id => ['product' => $product->name, 'summary' => $summary, 'videos' => $list]],
             'cards' => [['type' => 'videos', 'product' => ['id' => $product->id, 'name' => $product->name]] + $videos],
+        ];
+    }
+
+    private function productOnWeb(array $args): array
+    {
+        $product = $this->product($args);
+        if (! $product) {
+            return self::error('No existe un producto disponible con ese product_id.');
+        }
+
+        $web = $this->web->for($product);
+        $list = collect($web['links'])->map(fn ($l) => ['title' => $l['title'], 'site' => $l['domain']])->all();
+        $summary = match ($web['status']) {
+            'found' => count($list).' página(s) sobre este producto en otros sitios. La app las muestra en una tarjeta.',
+            'none' => 'No se encontró este producto en otros sitios web.',
+            'no_image' => 'El producto no tiene foto, así que no se pudo buscar en la web.',
+            default => 'Ahora no se pudo buscar en la web. La app le muestra un enlace para buscarlo en Google.',
+        };
+
+        return [
+            'result' => array_filter(['product_id' => $product->id, 'summary' => $summary, 'pages' => $list, 'photo_looks_like' => $web['best_guess']]),
+            'facts' => ['web_p'.$product->id => array_filter(['product' => $product->name, 'summary' => $summary, 'pages' => $list, 'photo_looks_like' => $web['best_guess']])],
+            'cards' => [['type' => 'links', 'product' => ['id' => $product->id, 'name' => $product->name]] + $web],
         ];
     }
 
@@ -253,7 +280,7 @@ final class AgentTools
         $id = (int) ($args['product_id'] ?? 0);
 
         return $id > 0
-            ? Product::with('store', 'category', 'images')->whereKey($id)->where('status', 'active')->first()
+            ? Product::with('store', 'category', 'images', 'universidad:id,nombre,siglas')->whereKey($id)->where('status', 'active')->first()
             : null;
     }
 
@@ -272,6 +299,7 @@ final class AgentTools
                 'category' => $product->category?->name,
                 'condition' => $product->condition,
                 'delivery_point' => $product->delivery_point,
+                'campus' => $product->universidad ? ($product->universidad->siglas ?: $product->universidad->nombre) : null,
             ],
             'highlight' => null,
             'reasons' => [],
@@ -298,6 +326,7 @@ final class AgentTools
             'condition' => $product['condition'] ?? null,
             'category' => $product['category'] ?? null,
             'delivery_point' => $product['delivery_point'] ?? null,
+            'delivery_campus' => $product['campus'] ?? null,
             'description' => $product['description'] ?? null,
             'evidence' => $evidence,
         ], fn ($v) => $v !== null && $v !== '');

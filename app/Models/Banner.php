@@ -25,6 +25,7 @@ class Banner extends Model
         'is_active',
         'start_date',
         'end_date',
+        'universidad_id', // vacío = para todos; con valor = solo estudiantes de ese campus (p. ej. ferias)
     ];
 
     protected $casts = [

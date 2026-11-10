@@ -118,6 +118,21 @@ Si el modelo no responde, se devuelve HTTP 503 `agent_unavailable` y no queda un
 - **En local, Ollama:** `ollama pull qwen3.5:9b`. En GPUs de menos de 8 GB, `qwen3.5:4b` cabe entero en la GPU y responde más rápido. Conviene `OLLAMA_CONTEXT_LENGTH=8192`.
 - **En un servidor sin GPU:** el mismo tipo de modelo abierto por un proveedor compatible con OpenAI, por ejemplo Groq con `openai/gpt-oss-120b`. Solo cambian las variables `AGENT_LLM_*`.
 
+## Entregas dentro del campus, mapa y ferias
+
+- **Productos:** cada producto tiene `universidad_id`, que es su campus de entrega; por defecto se usa el del vendedor, y sin campus no se publica. También puede tener `delivery_lat`/`delivery_lng`. Si el campus está ubicado, el punto tiene que caer dentro de `radio_entrega_m`, con 60 m de margen por el GPS (`CampusGeo`). Si un producto cambia de campus, se borra el punto anterior.
+- **Universidades:** guardan `latitud`, `longitud`, `radio_entrega_m` (600 por defecto) y `direccion`. `php artisan lau:ubicar-universidades` busca en Google Places (New) y Jev elige el campus principal:
+  - noul `campus_listed` y choice `main_campus`, con opciones nombradas con el nombre del lugar;
+  - si `campus_listed` < 0.7 o la elección < 0.5, no guarda nada y la universidad queda para revisión en `/equipo/campus`.
+- **Mapa:** `GET /api/marketplace/campus-map` devuelve campus con conteo de productos y de comercios con PayPal, más las ferias vigentes. `GET /api/marketplace/ferias` devuelve las ferias.
+- **Ferias:** `/api/lau-admin/ferias` (CRUD). Con `crear_anuncio`, se crea un banner con `universidad_id`, visible desde 7 días antes hasta el final de la feria; `GET /banners/active` solo muestra anuncios globales o del campus del estudiante.
+- **Producto en la web por su foto:** `GET /api/marketplace/products/{id}/web-links` (`ProductWebLinksService`):
+  - Cloud Vision *Web Detection* con la primera foto, más un noul de Jev por página: «¿es el mismo producto?» (≥ 0.7);
+  - caché de 24 h;
+  - sin foto o sin clave, devuelve `no_image` o `unavailable` y un enlace de búsqueda;
+  - el agente lo usa con `find_product_on_web`.
+- **Configuración de Google Cloud:** paso a paso en `docs/hackathon/MAPAS.md` del frontend. Usa `GOOGLE_SERVER_KEY`, restringida por IP y por API: Places, Vision y YouTube.
+
 ## Panel del equipo dentro de la app
 
 Hay una API para que el superusuario (`su_ad`) revise comercios desde la app, en `https://lauapp.es/equipo`:

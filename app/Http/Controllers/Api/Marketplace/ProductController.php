@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Marketplace;
 
 use App\Models\Product;
+use App\Models\Universidad;
+use App\Services\Marketplace\CampusGeo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -16,7 +18,31 @@ class ProductController extends MarketplaceController
      */
     private const FILENAME_PATTERN = '/^[A-Za-z0-9\-]+\.(webp|jpe?g|png)$/';
 
-    private const RELATIONS = ['images', 'category:id,name,slug,icon', 'user:id,name,username,imagen', 'store:'.\App\Models\Store::CARD_COLUMNS];
+    private const RELATIONS = [
+        'images', 'category:id,name,slug,icon', 'user:id,name,username,imagen', 'store:'.\App\Models\Store::CARD_COLUMNS,
+        'universidad:id,nombre,siglas,color_primario,latitud,longitud,radio_entrega_m',
+    ];
+
+    /**
+     * Todo se entrega dentro de un campus: el producto necesita un campus y, si trae un punto
+     * exacto de entrega, ese punto tiene que estar dentro del área de ese campus.
+     */
+    private function assertDeliveryInsideCampus(?int $campusId, array $data): void
+    {
+        if (! $campusId) {
+            throw ValidationException::withMessages(['universidad_id' => 'Elegí el campus donde vas a entregar.']);
+        }
+        if (! isset($data['delivery_lat'], $data['delivery_lng'])) {
+            return;
+        }
+
+        $campus = Universidad::find($campusId);
+        if (CampusGeo::located($campus) && ! CampusGeo::contains($campus, (float) $data['delivery_lat'], (float) $data['delivery_lng'])) {
+            throw ValidationException::withMessages([
+                'delivery_lat' => 'El punto de entrega tiene que estar dentro de '.CampusGeo::label($campus).'.',
+            ]);
+        }
+    }
 
     private function validateProduct(Request $request, bool $creating): array
     {
@@ -31,6 +57,10 @@ class ProductController extends MarketplaceController
             'status' => ['sometimes', Rule::in(['active', 'paused'])],
             'condition' => ['nullable', Rule::in(['nuevo', 'como_nuevo', 'buen_estado', 'aceptable'])],
             'delivery_point' => 'nullable|string|max:120',
+            // Campus donde se entrega (por defecto, el del vendedor) y punto exacto dentro de él.
+            'universidad_id' => 'sometimes|nullable|integer|exists:universidades,id',
+            'delivery_lat' => 'nullable|numeric|between:-90,90|required_with:delivery_lng',
+            'delivery_lng' => 'nullable|numeric|between:-180,180|required_with:delivery_lat',
             'images' => 'sometimes|array|max:'.ProductImageController::MAX_PER_PRODUCT,
             'images.*' => ['required', 'string', 'max:255', 'regex:'.self::FILENAME_PATTERN],
         ]);
@@ -90,11 +120,13 @@ class ProductController extends MarketplaceController
     {
         $data = $this->validateProduct($request, true);
         $images = $this->resolveImages($data);
+        $campusId = $data['universidad_id'] ?? $request->user()->universidad_id;
+        $this->assertDeliveryInsideCampus($campusId, $data);
 
-        $product = DB::transaction(function () use ($request, $data, $images) {
+        $product = DB::transaction(function () use ($request, $data, $images, $campusId) {
             $record = $request->user()->products()->create([
                 ...$data,
-                'universidad_id' => $request->user()->universidad_id,
+                'universidad_id' => $campusId,
                 'store_id' => $request->user()->store()->value('id'),
             ]);
             // Al crear, "sin images" significa simplemente que no trae fotos.
@@ -114,6 +146,15 @@ class ProductController extends MarketplaceController
         $record = DB::transaction(function () use ($request, $product, $data, $images) {
             // Scoping por relación: si no es tuyo, 404. Nunca se compara un id del cliente.
             $record = $request->user()->products()->findOrFail($product);
+            if (array_key_exists('universidad_id', $data) || isset($data['delivery_lat'])) {
+                $campusId = array_key_exists('universidad_id', $data) ? $data['universidad_id'] : $record->universidad_id;
+                // Cambiar de campus sin traer un punto nuevo borra el punto anterior (era del otro campus).
+                if ($campusId !== $record->universidad_id && ! isset($data['delivery_lat'])) {
+                    $data['delivery_lat'] = $data['delivery_lng'] = null;
+                }
+                $this->assertDeliveryInsideCampus($campusId ?? $request->user()->universidad_id, $data);
+                $data['universidad_id'] = $campusId ?? $request->user()->universidad_id;
+            }
             $record->update($data);
             if ($images !== null) {
                 $this->syncImages($record, $images);

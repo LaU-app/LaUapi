@@ -89,6 +89,16 @@ Route::prefix('lau-admin')->group(function () {
             Route::post('/{verification}/paypal', 'refreshPayPal')->whereNumber('verification');
             Route::get('/{verification}/document', 'document')->whereNumber('verification');
         });
+
+        // Campus (ubicación y área de entrega) y ferias con anuncio por campus.
+        Route::controller(\App\Http\Controllers\Api\Admin\CampusAdminController::class)->group(function () {
+            Route::get('/universidades', 'campuses');
+            Route::put('/universidades/{universidad}/ubicacion', 'updateLocation')->whereNumber('universidad');
+            Route::get('/ferias', 'ferias');
+            Route::post('/ferias', 'storeFeria');
+            Route::put('/ferias/{feria}', 'updateFeria')->whereNumber('feria');
+            Route::delete('/ferias/{feria}', 'destroyFeria')->whereNumber('feria');
+        });
     });
 });
 
@@ -158,6 +168,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Búsqueda inteligente con Jev (TypeSafe AI) y videos de reseñas filtrados por Jev.
         Route::post('/smart-shopping', SmartShoppingController::class)->middleware('throttle:12,1');
         Route::get('/products/{product}/videos', ProductVideosController::class)->whereNumber('product')->middleware('throttle:20,1');
+
+        // Campus en el mapa (entregas solo dentro de un campus), ferias y el producto en la web por su foto.
+        Route::get('/campus-map', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'map']);
+        Route::get('/ferias', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'ferias']);
+        Route::get('/products/{product}/web-links', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'webLinks'])
+            ->whereNumber('product')->middleware('throttle:20,1');
 
         // Agente de compras (chat con historial): modelo de lenguaje abierto + juicios de Jev.
         Route::controller(\App\Http\Controllers\Api\Marketplace\AgentConversationController::class)->prefix('agent/conversations')->group(function () {

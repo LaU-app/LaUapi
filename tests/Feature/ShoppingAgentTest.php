@@ -189,6 +189,21 @@ class ShoppingAgentTest extends TestCase
         $this->assertTrue(AgentConversation::sole()->messages()->where('role', 'assistant')->sole()->meta['corrected']);
     }
 
+    public function test_review_tool_gives_the_model_words_not_technical_states(): void
+    {
+        config(['services.youtube.key' => null]);
+        $this->fakeLlm(tool: 'get_product_reviews', args: ['product_id' => $this->calculator->id], final: 'Ahora no pude revisar videos; te dejo el enlace para buscarlos en YouTube.');
+        $this->fakeJev();
+        $this->applyFakes();
+
+        $this->postJson('/api/marketplace/agent/conversations', ['message' => '¿Tiene reseñas?'])
+            ->assertCreated()
+            ->assertJsonPath('data.messages.1.cards.0.type', 'videos');
+
+        Http::assertSent(fn (Request $r) => $r->url() === self::LLM
+            && collect($r['messages'])->contains(fn ($m) => $m['role'] === 'tool' && str_contains($m['content'], 'enlace para buscarlos en YouTube') && ! str_contains($m['content'], 'unavailable')));
+    }
+
     public function test_claims_still_unsupported_after_correction_are_removed(): void
     {
         $this->fakeSearch();
