@@ -30,6 +30,9 @@ final class CampusGeo
         return 2 * self::EARTH_RADIUS_M * asin(min(1, sqrt($h)));
     }
 
+    /** Área de entrega por defecto: la universidad y un poco alrededor (se ajusta por campus en el panel). */
+    public const DEFAULT_RADIUS_M = 300;
+
     public static function located(?Universidad $campus): bool
     {
         return $campus !== null && $campus->latitud !== null && $campus->longitud !== null;

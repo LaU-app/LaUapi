@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::table('universidades', function (Blueprint $table) {
             $table->decimal('latitud', 10, 7)->nullable();
             $table->decimal('longitud', 10, 7)->nullable();
-            $table->unsignedSmallInteger('radio_entrega_m')->default(600);
+            $table->unsignedSmallInteger('radio_entrega_m')->default(300);
             $table->string('direccion', 255)->nullable();
             $table->string('google_place_id', 255)->nullable();
             $table->timestamp('ubicado_en')->nullable();

@@ -122,11 +122,11 @@ class LocateUniversities extends Command
                 'ubicado_en' => now(),
             ])->save();
 
-            $this->info(sprintf('OK %s → %s (%.5f, %.5f) · campus %.2f, elección %.2f', $campus->siglas ?: $campus->nombre, $place['name'], $place['lat'], $place['lng'], $listed, $probability));
+            $this->info(sprintf('OK %s → %s (%.5f, %.5f, %d m) · campus %.2f, elección %.2f', $campus->siglas ?: $campus->nombre, $place['name'], $place['lat'], $place['lng'], $campus->radio_entrega_m, $listed, $probability));
         }
 
         $this->line($pending ? "Quedan {$pending} por revisar en /equipo/campus." : 'Listo.');
-        $this->line('El radio de entrega por defecto es 600 m; ajustalo por campus en /equipo/campus.');
+        $this->line('Radio de entrega por defecto: 300 m (la universidad y un poco alrededor). Agrandalo en /equipo/campus para campus grandes como la UES.');
 
         return self::SUCCESS;
     }
