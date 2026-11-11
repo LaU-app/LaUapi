@@ -1,0 +1,759 @@
+{
+  "_comment": "Catálogo de demostración de LaU Marketplace. Única fuente de verdad: la leen MarketplaceCatalogSeeder.php y fetch_images.py. Negocios, emprendimientos y personas son ficticios; los productos sí son productos reales. Los campus se referencian por dominio de la universidad. Las imágenes se referencian por clave (images.<clave>) y viven en productos/<clave>.jpg.",
+  "delivery_points": [
+    "Biblioteca central",
+    "Entrada principal",
+    "Cafetería de Ingeniería",
+    "Plaza central del campus",
+    "Edificio de aulas",
+    "Parqueo de estudiantes",
+    "Auditorio principal",
+    "Kiosco frente a la biblioteca"
+  ],
+  "businesses": [
+    {
+      "key": "libreria-cuscatlan-tecnica",
+      "name": "Librería Cuscatlán Técnica",
+      "category": "libros",
+      "paypal": true,
+      "gateway": null,
+      "colors": ["#1F3A5F", "#F2B134"],
+      "monogram": "LC",
+      "owner": { "name": "Rodrigo Ernesto Alfaro Menjívar", "username": "lib_cuscatlan", "email": "libreria.cuscatlan@negocios.lauapp.es" },
+      "description": "Librería técnica y universitaria con más de diez años en el Centro Histórico de San Salvador. Textos de ingeniería, ciencias de la salud y ciencias exactas en ediciones vigentes, con entrega en campus y factura de consumidor final o crédito fiscal.",
+      "campuses": ["ues.edu.sv", "uca.edu.sv", "udb.edu.sv"],
+      "verification": {
+        "legal_name": "Librería Cuscatlán Técnica, S.A. de C.V.",
+        "business_type": "sociedad",
+        "nit": "0614-120315-104-6",
+        "nrc": "245781-3",
+        "legal_representative": "Rodrigo Ernesto Alfaro Menjívar",
+        "contact_email": "ventas.libreria@negocios.lauapp.es",
+        "contact_phone": "+503 2235-4410",
+        "address": "Calle Arce #1124, Centro Histórico, San Salvador",
+        "website": null,
+        "offer_description": "Libros de texto universitarios nuevos (ingeniería, salud, ciencias exactas y programación), diccionarios y material de consulta, con entrega en los campus de la UES, la UCA y la Universidad Don Bosco."
+      },
+      "products": [
+        { "name": "Cálculo de una variable: Trascendentes tempranas – James Stewart (8.ª ed.)", "category": "libros", "price": "58.00", "stock": 6, "condition": "nuevo", "images": ["libro-calculo-nuevo"],
+          "description": "Edición en español, pasta blanda, 1 200 páginas. Cubre límites, derivadas, integrales, series y ecuaciones diferenciales con ejercicios resueltos al final de cada sección. Es el texto base de Cálculo I y II en la mayoría de ingenierías del país.\n\nIncluye código de acceso a la plataforma de ejercicios (válido por 6 meses). Libro nuevo, sellado, con factura." },
+        { "name": "Física para ciencias e ingeniería, Vol. 1 – Serway y Jewett (10.ª ed.)", "category": "libros", "price": "52.00", "stock": 5, "condition": "nuevo", "images": ["libro-fisica"],
+          "description": "Mecánica, oscilaciones, ondas y termodinámica. Edición en español con problemas por niveles de dificultad y respuestas a los ejercicios impares. Recomendado para Física I y II de ingeniería y ciencias.\n\nLibro nuevo. Pregúntanos por el Volumen 2 (electricidad y magnetismo)." },
+        { "name": "Química – Raymond Chang y Jason Overby (13.ª ed.)", "category": "libros", "price": "55.00", "stock": 4, "condition": "nuevo", "images": ["libro-quimica"],
+          "description": "El texto de referencia de Química General: estequiometría, gases, termoquímica, enlace químico, equilibrio y electroquímica. Ilustraciones a color y problemas de repaso por capítulo.\n\nLibro nuevo en español. Ideal para Química General I y II (Ingeniería, Medicina, Química y Farmacia)." },
+        { "name": "Fundamentos de programación – Luis Joyanes Aguilar (5.ª ed.)", "category": "libros", "price": "38.00", "stock": 7, "condition": "nuevo", "images": ["libros-programacion"],
+          "description": "Algoritmos, pseudocódigo, estructuras de datos y programación orientada a objetos, con ejemplos en C, C++ y Java. Muy usado en Programación I de Ingeniería en Sistemas y carreras técnicas de computación.\n\nLibro nuevo, edición en español." },
+        { "name": "Gray. Anatomía para estudiantes (4.ª ed.)", "category": "libros", "price": "79.00", "stock": 3, "condition": "nuevo", "images": ["atlas-anatomia"],
+          "description": "La versión para estudiantes del clásico «Anatomy of the Human Body» de Henry Gray: anatomía regional con casos clínicos, ilustraciones a color y la terminología anatómica internacional. Pasta blanda, edición en español, con acceso a contenido digital complementario.\n\nIndispensable para Anatomía en Medicina, Enfermería, Odontología y Fisioterapia. Libro nuevo con factura." },
+        { "name": "Diccionario bilingüe Oxford Pocket español-inglés / inglés-español", "category": "libros", "price": "16.50", "stock": 12, "condition": "nuevo", "images": ["diccionario-bilingue"],
+          "description": "Más de 70 000 palabras y expresiones, con pronunciación, verbos irregulares y notas culturales. Tamaño de bolsillo, ideal para las clases de Inglés de cualquier carrera.\n\nNuevo." },
+        { "name": "Tabla periódica plastificada tamaño carta (doble cara)", "category": "materiales", "price": "2.75", "stock": 40, "condition": "nuevo", "images": ["tabla-periodica"],
+          "description": "Tabla periódica actualizada con los 118 elementos, masa atómica, electronegatividad y configuración electrónica. Plastificada, resistente a manchas, con tabla de solubilidad y constantes al reverso.\n\nPermitida en la mayoría de laboratorios y exámenes de Química General." }
+      ]
+    },
+    {
+      "key": "lempa-tech-accesorios",
+      "name": "Lempa Tech Accesorios",
+      "category": "tecnologia",
+      "paypal": true,
+      "gateway": null,
+      "colors": ["#0F766E", "#5EEAD4"],
+      "monogram": "LT",
+      "owner": { "name": "Karla Yamileth Orellana Bonilla", "username": "lempa_tech", "email": "lempa.tech@negocios.lauapp.es" },
+      "description": "Accesorios de tecnología originales para estudiantes: periféricos, carga, almacenamiento y audio. Garantía de 3 a 12 meses según el producto y entrega en campus en San Salvador.",
+      "campuses": ["utec.edu.sv", "ufg.edu.sv", "unab.edu.sv"],
+      "verification": {
+        "legal_name": "Karla Yamileth Orellana Bonilla",
+        "business_type": "persona_natural",
+        "nit": "0614-230992-107-1",
+        "nrc": "301452-8",
+        "legal_representative": "Karla Yamileth Orellana Bonilla",
+        "contact_email": "ventas.lempatech@negocios.lauapp.es",
+        "contact_phone": "+503 2260-7815",
+        "address": "Centro Comercial Metrocentro, local 2-14, San Salvador",
+        "website": null,
+        "offer_description": "Mouse, teclados, audífonos, cargadores USB-C, hubs y almacenamiento externo originales, con garantía escrita y entrega en los campus de la UTEC, la UFG y la UNAB."
+      },
+      "products": [
+        { "name": "Mouse inalámbrico Logitech M170", "category": "tecnologia", "price": "12.99", "stock": 20, "condition": "nuevo", "images": ["mouse-logitech"],
+          "description": "Mouse inalámbrico de 2.4 GHz con receptor USB nano, alcance de 10 m y hasta 12 meses de batería (pila AA incluida). Diseño ambidiestro y compacto, ideal para la laptop.\n\nGarantía de 12 meses." },
+        { "name": "Teclado mecánico compacto 60 % (switch rojo, retroiluminado)", "category": "tecnologia", "price": "39.00", "stock": 6, "condition": "nuevo", "images": ["teclado-mecanico"],
+          "description": "Teclado de 61 teclas con switches lineales rojos, keycaps de PBT y retroiluminación RGB. Cable USB-C desmontable. Distribución en inglés (US), perfecta para programar.\n\nGarantía de 6 meses." },
+        { "name": "Audífonos Bluetooth over-ear con cancelación de ruido", "category": "tecnologia", "price": "45.00", "stock": 8, "condition": "nuevo", "images": ["audifonos-over-ear"],
+          "description": "Cancelación activa de ruido para estudiar en la biblioteca o en el bus, hasta 40 horas de batería, carga USB-C y micrófono para clases en línea. Plegables, con estuche.\n\nGarantía de 6 meses." },
+        { "name": "Cargador USB-C GaN de 65 W con dos puertos", "category": "electronica", "price": "29.00", "stock": 10, "condition": "nuevo", "images": ["cargador-usb-c"],
+          "description": "Carga una laptop USB-C y el celular al mismo tiempo. Tecnología GaN: la mitad del tamaño de un cargador tradicional. Compatible con Power Delivery 3.0. Incluye cable USB-C de 1 m.\n\nGarantía de 12 meses." },
+        { "name": "Hub USB-C 7 en 1 (HDMI 4K, 3 × USB 3.0, lector SD/microSD, PD 100 W)", "category": "tecnologia", "price": "27.00", "stock": 9, "condition": "nuevo", "images": ["hub-usb-c"],
+          "description": "Conecta la laptop al proyector del aula por HDMI 4K, usa memorias y lectores de tarjeta y carga a la vez por Power Delivery. Carcasa de aluminio.\n\nGarantía de 6 meses." },
+        { "name": "Memoria USB SanDisk Ultra Flair 64 GB (USB 3.0)", "category": "tecnologia", "price": "8.50", "stock": 30, "condition": "nuevo", "images": ["memoria-usb"],
+          "description": "Hasta 150 MB/s de lectura, carcasa metálica resistente y argolla para el llavero. Para tareas, presentaciones y respaldos.\n\nOriginal, sellada." },
+        { "name": "Disco SSD externo 1 TB USB 3.2", "category": "tecnologia", "price": "79.00", "stock": 4, "condition": "nuevo", "images": ["ssd-externo"],
+          "description": "Hasta 1 050 MB/s, resistente a caídas de hasta 2 m. Incluye cables USB-C a USB-C y USB-C a USB-A. Ideal para proyectos de diseño, video y máquinas virtuales.\n\nGarantía de 12 meses." }
+      ]
+    },
+    {
+      "key": "uniformes-clinicos-santa-tecla",
+      "name": "Uniformes Clínicos Santa Tecla",
+      "category": "ropa",
+      "paypal": true,
+      "gateway": null,
+      "colors": ["#2563EB", "#BFDBFE"],
+      "monogram": "UC",
+      "owner": { "name": "Silvia Lorena Cañas de Mejía", "username": "uniformes_st", "email": "uniformes.santatecla@negocios.lauapp.es" },
+      "description": "Batas, scrubs y equipo básico para estudiantes de salud y laboratorio. Confección propia en Santa Tecla, tallas de XS a XXL y bordado de nombre y carrera.",
+      "campuses": ["unab.edu.sv", "usam.edu.sv", "ues.edu.sv"],
+      "verification": {
+        "legal_name": "Confecciones Clínicas Santa Tecla, S.A. de C.V.",
+        "business_type": "sociedad",
+        "nit": "0511-050717-102-4",
+        "nrc": "268904-1",
+        "legal_representative": "Silvia Lorena Cañas de Mejía",
+        "contact_email": "pedidos.uniformes@negocios.lauapp.es",
+        "contact_phone": "+503 2228-6140",
+        "address": "2.ª Avenida Norte #3-8, Santa Tecla, La Libertad",
+        "website": null,
+        "offer_description": "Batas de laboratorio, uniformes clínicos (scrubs), estetoscopios, gorros y equipo de protección para estudiantes de Medicina, Enfermería, Laboratorio Clínico y Química, con bordado personalizado."
+      },
+      "products": [
+        { "name": "Bata de laboratorio manga larga unisex (tallas XS–XXL)", "category": "ropa", "price": "15.00", "stock": 25, "condition": "nuevo", "images": ["bata-laboratorio"],
+          "description": "Tela de gabardina 65 % poliéster y 35 % algodón, antimanchas y fácil de planchar. Cuello tipo solapa, tres bolsas y botones de presión. Largo a la rodilla, como lo exigen los laboratorios de Química y Biología.\n\nPregunta por el bordado de nombre ($3.50)." },
+        { "name": "Uniforme clínico (scrub) antifluido: filipina y pantalón", "category": "ropa", "price": "28.00", "stock": 15, "condition": "nuevo", "images": ["scrubs"],
+          "description": "Tela antifluido y antibacterial con elasticidad en cuatro direcciones. Filipina con cuello en V y tres bolsas; pantalón con cintura elástica y cordón. Colores: azul marino, vino, verde quirúrgico y negro.\n\nTallas XS a XXL." },
+        { "name": "Estetoscopio de doble campana para estudiantes", "category": "materiales", "price": "24.00", "stock": 10, "condition": "nuevo", "images": ["estetoscopio"],
+          "description": "Campana y diafragma de acero inoxidable, tubo de PVC libre de látex de 56 cm y olivas suaves de repuesto. Ideal para Semiología y prácticas de Enfermería.\n\nIncluye estuche y placa para grabar nombre." },
+        { "name": "Zuecos clínicos antideslizantes", "category": "ropa", "price": "35.00", "stock": 8, "condition": "nuevo", "images": ["zuecos-clinicos"],
+          "description": "Calzado cerrado, ligero y lavable, con suela antideslizante certificada para hospital y plantilla acolchada para turnos largos. Tallas 35 a 44." },
+        { "name": "Gorro quirúrgico de tela estampado (ajustable)", "category": "ropa", "price": "6.00", "stock": 30, "condition": "nuevo", "images": ["gorro-quirurgico"],
+          "description": "Algodón 100 % con banda absorbente en la frente y cierre ajustable. Diseños variados. Reutilizable y lavable." },
+        { "name": "Gafas de seguridad para laboratorio (antiempañante)", "category": "materiales", "price": "4.50", "stock": 40, "condition": "nuevo", "images": ["gafas-seguridad"],
+          "description": "Policarbonato resistente a impactos con protección lateral y tratamiento antiempañante. Se pueden usar sobre lentes graduados. Requeridas en prácticas de Química y Laboratorio Clínico." },
+        { "name": "Bordado de nombre y carrera en bata o scrub", "category": "servicios", "price": "3.50", "stock": 50, "condition": null, "images": ["bordado"],
+          "description": "Bordado computarizado de hasta dos líneas (nombre y carrera o logo de la facultad) en el color de hilo que elijas. Entrega en 48 horas. Si traes tu propia bata, también la bordamos." }
+      ]
+    },
+    {
+      "key": "taller-arte-quetzaltepec",
+      "name": "Taller de Arte Quetzaltepec",
+      "category": "materiales",
+      "paypal": true,
+      "gateway": null,
+      "colors": ["#B4235A", "#FBBF24"],
+      "monogram": "Q",
+      "owner": { "name": "Ernesto Guillermo Valle Durán", "username": "arte_quetzal", "email": "taller.quetzaltepec@negocios.lauapp.es" },
+      "description": "Materiales de arte, dibujo técnico y diseño para estudiantes de Arquitectura, Diseño Gráfico y Diseño de Modas. Marcas profesionales a precio de estudiante.",
+      "campuses": ["ufg.edu.sv", "ujmd.edu.sv", "uca.edu.sv"],
+      "verification": {
+        "legal_name": "Ernesto Guillermo Valle Durán",
+        "business_type": "persona_natural",
+        "nit": "0614-180888-103-9",
+        "nrc": "287316-5",
+        "legal_representative": "Ernesto Guillermo Valle Durán",
+        "contact_email": "ventas.quetzaltepec@negocios.lauapp.es",
+        "contact_phone": "+503 2243-9027",
+        "address": "Colonia Flor Blanca, 45 Avenida Sur #614, San Salvador",
+        "website": null,
+        "offer_description": "Lápices de colores, marcadores a base de alcohol, acuarelas, sketchbooks, tableros de dibujo y herramientas de corte para estudiantes de diseño y arquitectura de la UFG, la UJMD y la UCA."
+      },
+      "products": [
+        { "name": "Lápices de colores Prismacolor Premier (24 colores)", "category": "materiales", "price": "36.00", "stock": 8, "condition": "nuevo", "images": ["lapices-colores"],
+          "description": "Mina suave de alta pigmentación a base de cera, ideal para degradados y mezclas. Estuche metálico de 24 colores. El estándar en Ilustración y Bocetaje.\n\nOriginal." },
+        { "name": "Sketchbook A4 de 120 g, 80 hojas", "category": "materiales", "price": "9.50", "stock": 20, "condition": "nuevo", "images": ["sketchbook"],
+          "description": "Papel libre de ácido de 120 g/m², apto para grafito, tinta, marcador y lavados ligeros. Espiral doble y pasta dura negra." },
+        { "name": "Marcadores a base de alcohol doble punta (48 colores)", "category": "materiales", "price": "32.00", "stock": 6, "condition": "nuevo", "images": ["marcadores-alcohol"],
+          "description": "Punta fina y punta biselada en cada marcador, secado rápido y colores mezclables. Para renders de arquitectura, diseño industrial y moda. Incluye estuche." },
+        { "name": "Set de acuarelas en pastilla (24 colores) con pincel de agua", "category": "materiales", "price": "18.00", "stock": 10, "condition": "nuevo", "images": ["acuarelas"],
+          "description": "Pastillas de acuarela de alta transparencia en estuche de viaje con paleta integrada y pincel con depósito de agua. Perfecto para bocetos urbanos y Teoría del Color." },
+        { "name": "Tablero de dibujo A3 con regla paralela", "category": "materiales", "price": "42.00", "stock": 4, "condition": "nuevo", "images": ["tablero-dibujo"],
+          "description": "Tablero portátil de 47 × 35 cm con regla paralela deslizante, escala graduada, inclinación ajustable y maletín. Para Dibujo Técnico y Arquitectónico." },
+        { "name": "Lápices de grafito para dibujo (12 durezas, 6H–8B)", "category": "materiales", "price": "7.25", "stock": 25, "condition": "nuevo", "images": ["lapices-grafito"],
+          "description": "Set de 12 lápices de grafito de 6H a 8B en estuche metálico. Para dibujo de figura, sombreado y Dibujo Técnico." },
+        { "name": "Cúter de precisión con 5 cuchillas y base de corte A3", "category": "materiales", "price": "14.00", "stock": 12, "condition": "nuevo", "images": ["base-corte"],
+          "description": "Base de corte autorregenerable de 3 mm con cuadrícula impresa y cúter de precisión tipo bisturí con cinco cuchillas de repuesto. Indispensable para maquetas." }
+      ]
+    },
+    {
+      "key": "papeleria-el-tecolote",
+      "name": "Papelería El Tecolote",
+      "category": "materiales",
+      "paypal": false,
+      "gateway": { "gateway": "paypal", "status": "requested", "note": "Ya estamos verificados; queremos cobrar con PayPal en LaU para que los estudiantes paguen antes de recoger." },
+      "colors": ["#7C4A1E", "#F5C26B"],
+      "monogram": "ET",
+      "owner": { "name": "Marta Eugenia Rosales Quintanilla", "username": "pap_tecolote", "email": "papeleria.tecolote@negocios.lauapp.es" },
+      "description": "Papelería de barrio frente a la universidad desde 2009: calculadoras, cuadernos y útiles al precio de siempre. Apartá en LaU y pagá al recibir en el campus.",
+      "campuses": ["itca.edu.sv", "ujmd.edu.sv", "uca.edu.sv"],
+      "verification": {
+        "legal_name": "Marta Eugenia Rosales Quintanilla",
+        "business_type": "persona_natural",
+        "nit": "0614-070576-101-2",
+        "nrc": "154209-6",
+        "legal_representative": "Marta Eugenia Rosales Quintanilla",
+        "contact_email": "ventas.tecolote@negocios.lauapp.es",
+        "contact_phone": "+503 2289-3371",
+        "address": "Carretera a Santa Tecla, km 11, Antiguo Cuscatlán, La Libertad",
+        "website": null,
+        "offer_description": "Calculadoras científicas, cuadernos, bolígrafos, archivadores, papel bond e instrumentos de medición para estudiantes, con entrega en ITCA-FEPADE, la UJMD y la UCA."
+      },
+      "products": [
+        { "name": "Calculadora científica Casio fx-991LA CW", "category": "electronica", "price": "27.50", "stock": 12, "condition": "nuevo", "images": ["casio-fx991"],
+          "description": "La calculadora más pedida en Ingeniería: más de 540 funciones, cálculo de integrales y derivadas, matrices, vectores, ecuaciones, tablas y estadística. Pantalla de alta resolución con menús en español. Funciona con pila AAA (incluida).\n\nPermitida en la mayoría de exámenes. Nueva, con garantía de 12 meses." },
+        { "name": "Calculadora científica Casio fx-82LA X", "category": "electronica", "price": "15.00", "stock": 15, "condition": "nuevo", "images": ["casio-fx82"],
+          "description": "274 funciones con pantalla natural (fracciones y raíces como en el cuaderno). Ideal para Matemática I, Contaduría, Estadística y bachillerato. Tapa protectora deslizable." },
+        { "name": "Cuaderno profesional de espiral cuadriculado, 200 hojas", "category": "materiales", "price": "4.25", "stock": 40, "condition": "nuevo", "images": ["cuaderno-espiral"],
+          "description": "Cuadrícula de 7 mm, cinco materias con separadores de colores, hojas microperforadas y pasta de polipropileno resistente al agua." },
+        { "name": "Bolígrafos de gel punta 0.7 mm (paquete de 12)", "category": "materiales", "price": "5.50", "stock": 30, "condition": "nuevo", "images": ["boligrafos-gel"],
+          "description": "Tinta de gel de secado rápido con grip de goma. Paquete con 4 negros, 4 azules, 2 rojos y 2 verdes." },
+        { "name": "Marcadores fluorescentes punta biselada (6 colores)", "category": "materiales", "price": "3.75", "stock": 35, "condition": "nuevo", "images": ["resaltadores"],
+          "description": "Tinta a base de agua que no traspasa el papel, colores neón y pastel. Para subrayar apuntes y lecturas." },
+        { "name": "Resma de papel bond tamaño carta 75 g (500 hojas)", "category": "materiales", "price": "5.75", "stock": 20, "condition": "nuevo", "images": ["resma-papel"],
+          "description": "Papel blanco multipropósito para impresoras láser y de inyección. Ideal para tareas, informes y trabajos de graduación." },
+        { "name": "Escalímetro triangular de 30 cm (6 escalas)", "category": "materiales", "price": "4.50", "stock": 18, "condition": "nuevo", "images": ["escalimetro"],
+          "description": "Escalas 1:20, 1:25, 1:50, 1:75, 1:100 y 1:125, de plástico rígido con grabado de alta precisión. Para Dibujo Técnico, Arquitectura e Ingeniería Civil." }
+      ]
+    },
+    {
+      "key": "cafe-volcan-del-campus",
+      "name": "Café Volcán del Campus",
+      "category": "servicios",
+      "paypal": false,
+      "gateway": null,
+      "colors": ["#3B2416", "#D97706"],
+      "monogram": "CV",
+      "owner": { "name": "Julio César Monterrosa Linares", "username": "cafe_volcan", "email": "cafe.volcan@negocios.lauapp.es" },
+      "description": "Café de altura salvadoreño y comida casera para aguantar la jornada de clases. Apartá tu pedido en LaU, lo recogés en el campus y pagás al recibir.",
+      "campuses": ["ues.edu.sv", "utec.edu.sv"],
+      "verification": {
+        "legal_name": "Julio César Monterrosa Linares",
+        "business_type": "persona_natural",
+        "nit": "0614-301085-105-7",
+        "nrc": "276118-0",
+        "legal_representative": "Julio César Monterrosa Linares",
+        "contact_email": "pedidos.cafevolcan@negocios.lauapp.es",
+        "contact_phone": "+503 2225-1906",
+        "address": "Final 25 Avenida Norte, frente a la Ciudad Universitaria, San Salvador",
+        "website": null,
+        "offer_description": "Café salvadoreño de altura (en grano y molido), desayunos, pan dulce, pupusas y bebidas tradicionales para estudiantes, con entrega en puntos de la UES y la UTEC."
+      },
+      "products": [
+        { "name": "Café molido de altura, 340 g (Apaneca-Ilamatepec)", "category": "servicios", "price": "7.50", "stock": 20, "condition": null, "images": ["cafe-molido"],
+          "description": "Café 100 % arábica de la cordillera Apaneca-Ilamatepec, cultivado sobre los 1 200 m. Tueste medio, notas a chocolate y panela. Molienda media para cafetera de goteo o prensa francesa. Bolsa con válvula de desgasificación." },
+        { "name": "Combo parcial: café americano 12 oz + pan con pollo", "category": "servicios", "price": "3.25", "stock": 25, "condition": null, "images": ["pan-con-pollo"],
+          "description": "El combo de los días de examen: pan francés con pollo guisado, curtido y salsa, más un café americano de la casa. Apartalo antes de las 9:00 a. m. y lo recogés caliente." },
+        { "name": "Pupusas revueltas para llevar (3 unidades con curtido y salsa)", "category": "servicios", "price": "2.25", "stock": 30, "condition": null, "images": ["pupusas"],
+          "description": "Pupusas de masa de maíz rellenas de chicharrón, frijol y quesillo, hechas al momento. Se entregan en caja con curtido y salsa de tomate aparte. Disponible de lunes a sábado." },
+        { "name": "Quesadilla salvadoreña (porción)", "category": "servicios", "price": "1.50", "stock": 20, "condition": null, "images": ["quesadilla-salvadorena"],
+          "description": "Receta tradicional de queso duro y crema, con ajonjolí por encima. Horneada cada mañana. Perfecta con café." },
+        { "name": "Horchata de morro, vaso de 16 oz", "category": "servicios", "price": "1.25", "stock": 30, "condition": null, "images": ["horchata"],
+          "description": "Horchata salvadoreña de semilla de morro, arroz, cacao, canela y ajonjolí, preparada el mismo día. Bien fría." },
+        { "name": "Termo de acero inoxidable 500 ml", "category": "materiales", "price": "11.00", "stock": 10, "condition": "nuevo", "images": ["termo-acero"],
+          "description": "Doble pared al vacío: mantiene el café caliente 12 horas y el agua fría 24. Tapa hermética a prueba de derrames, ideal para la mochila. Tu primer café de la casa va incluido." }
+      ]
+    },
+    {
+      "key": "impresiones-express-zacamil",
+      "name": "Impresiones Express Zacamil",
+      "category": "servicios",
+      "paypal": false,
+      "gateway": { "gateway": "otra", "gateway_name": "Pasarela de nuestro banco", "status": "requested", "note": "En el local ya cobramos con la pasarela de pago de nuestro banco (tarjeta y enlace de pago). Queremos usar la misma en LaU para los pedidos de empastado." },
+      "colors": ["#111827", "#22D3EE"],
+      "monogram": "IZ",
+      "owner": { "name": "Wilfredo Antonio Sermeño Chávez", "username": "impresiones_zx", "email": "impresiones.zacamil@negocios.lauapp.es" },
+      "description": "Impresión, copias, anillados y empastados de tesis con entrega en campus. Enviá tu archivo por el chat de LaU, apartá el servicio y pagá al recibir.",
+      "campuses": ["ues.edu.sv", "unab.edu.sv", "usam.edu.sv"],
+      "verification": {
+        "legal_name": "Impresiones Express Zacamil, S.A. de C.V.",
+        "business_type": "sociedad",
+        "nit": "0614-140619-108-3",
+        "nrc": "312077-4",
+        "legal_representative": "Wilfredo Antonio Sermeño Chávez",
+        "contact_email": "pedidos.zacamil@negocios.lauapp.es",
+        "contact_phone": "+503 2272-5548",
+        "address": "Centro Urbano Zacamil, edificio 12, local 3, Mejicanos, San Salvador",
+        "website": null,
+        "offer_description": "Impresión en blanco y negro y a color, anillados, empastados de tesis, pósters académicos, tarjetas de presentación y plotteo de planos, con entrega en la UES, la UNAB y la USAM."
+      },
+      "products": [
+        { "name": "Empastado de tesis en pasta dura con letras doradas", "category": "servicios", "price": "14.00", "stock": 30, "condition": null, "images": ["empastado-tesis"],
+          "description": "Pasta dura forrada en vinil (negro, azul o vino) con título, autores y año grabados en dorado en portada y lomo. Cumple el formato de entrega de biblioteca de la mayoría de universidades. Entrega en 3 días hábiles; el ejemplar extra cuesta $11." },
+        { "name": "Anillado de documentos (hasta 150 hojas)", "category": "servicios", "price": "1.75", "stock": 100, "condition": null, "images": ["anillado"],
+          "description": "Espiral plástico o metálico, con portada de acetato transparente y contraportada de cartulina. Listo en 15 minutos si lo apartás con tiempo." },
+        { "name": "Impresión láser en blanco y negro, por página (tamaño carta)", "category": "servicios", "price": "0.05", "stock": 5000, "condition": null, "images": ["impresora-laser"],
+          "description": "Impresión láser nítida a una o dos caras en papel bond de 75 g. Enviá tu PDF por el chat; desde 100 páginas el precio baja a $0.04." },
+        { "name": "Impresión a color, por página (tamaño carta)", "category": "servicios", "price": "0.25", "stock": 3000, "condition": null, "images": ["impresion-color"],
+          "description": "Colores fieles para portadas, infografías y diapositivas. Papel bond o, por $0.15 extra, papel couché brillante." },
+        { "name": "Póster académico 90 × 120 cm para congresos y ferias", "category": "servicios", "price": "18.00", "stock": 20, "condition": null, "images": ["poster-cientifico"],
+          "description": "Impresión en lona mate o papel fotográfico a alta resolución, con revisión gratuita de tu archivo antes de imprimir. Ideal para ferias de ciencia, defensas de tesis y congresos. Entrega en 24 horas." },
+        { "name": "Tarjetas de presentación (100 unidades, couché 300 g)", "category": "servicios", "price": "9.00", "stock": 40, "condition": null, "images": ["tarjetas-presentacion"],
+          "description": "Impresión full color a dos caras con laminado mate. Si no tenés diseño, te armamos uno sencillo sin costo extra." },
+        { "name": "Plotteo de planos de arquitectura (tamaño A1)", "category": "servicios", "price": "3.50", "stock": 200, "condition": null, "images": ["plotter"],
+          "description": "Impresión de planos en plotter en papel bond de 90 g, en líneas o a color. Respetamos escalas y grosores de línea del archivo PDF o DWG." }
+      ]
+    },
+    {
+      "key": "deportes-cumbres-del-boqueron",
+      "name": "Deportes Cumbres del Boquerón",
+      "category": "ropa",
+      "paypal": false,
+      "gateway": { "gateway": "paypal", "status": "requested", "note": "Queremos recibir pagos con PayPal para los pedidos de los equipos universitarios." },
+      "colors": ["#166534", "#A3E635"],
+      "monogram": "CB",
+      "owner": { "name": "Héctor Manuel Funes Argueta", "username": "dep_boqueron", "email": "deportes.boqueron@negocios.lauapp.es" },
+      "description": "Artículos deportivos para las ligas universitarias, el gimnasio y el senderismo. Precios especiales para equipos de facultad.",
+      "campuses": ["uca.edu.sv", "udb.edu.sv", "ugb.edu.sv"],
+      "verification": {
+        "legal_name": "Deportes Cumbres del Boquerón, S.A. de C.V.",
+        "business_type": "sociedad",
+        "nit": "0614-220711-106-0",
+        "nrc": "229563-9",
+        "legal_representative": "Héctor Manuel Funes Argueta",
+        "contact_email": "ventas.boqueron@negocios.lauapp.es",
+        "contact_phone": "+503 2263-0482",
+        "address": "Boulevard Los Próceres, Centro Comercial Las Terrazas, local 8, San Salvador",
+        "website": null,
+        "offer_description": "Balones, mats de yoga, mancuernas, botellas deportivas y protecciones para las ligas y gimnasios universitarios, con entrega en la UCA, la Universidad Don Bosco y la Universidad Gerardo Barrios."
+      },
+      "products": [
+        { "name": "Balón de fútbol N.º 5 cosido a mano", "category": "materiales", "price": "22.00", "stock": 15, "condition": "nuevo", "images": ["balon-futbol"],
+          "description": "32 paneles de cuero sintético cosidos a mano, cámara de látex y peso oficial (410–450 g). Para cancha natural o sintética. Precio especial comprando 5 o más para tu equipo." },
+        { "name": "Balón de baloncesto N.º 7 de cuero sintético", "category": "materiales", "price": "26.00", "stock": 10, "condition": "nuevo", "images": ["balon-baloncesto"],
+          "description": "Tamaño oficial masculino, superficie con buen agarre para interior y exterior. Ideal para las ligas interfacultades." },
+        { "name": "Balón de voleibol de cuero sintético suave", "category": "materiales", "price": "18.00", "stock": 10, "condition": "nuevo", "images": ["balon-voleibol"],
+          "description": "18 paneles con cubierta acolchada que no lastima los antebrazos. Tamaño y peso oficial para cancha o playa." },
+        { "name": "Mat de yoga antideslizante 6 mm con correa", "category": "materiales", "price": "16.00", "stock": 12, "condition": "nuevo", "images": ["mat-yoga"],
+          "description": "TPE ecológico de doble capa, antideslizante por ambos lados y fácil de limpiar. 183 × 61 cm, incluye correa para cargarlo a clases de yoga o al gimnasio." },
+        { "name": "Botella deportiva de 1 litro sin BPA", "category": "materiales", "price": "8.00", "stock": 30, "condition": "nuevo", "images": ["botella-deportiva"],
+          "description": "Tritán libre de BPA con marcas de horario para recordar hidratarte, tapa con seguro y asa. Apta para lavavajillas." },
+        { "name": "Cuerda para saltar con rodamientos y mangos de espuma", "category": "materiales", "price": "7.00", "stock": 20, "condition": "nuevo", "images": ["cuerda-saltar"],
+          "description": "Cable de acero recubierto, ajustable hasta 3 m, con rodamientos para giros rápidos. Para cardio y entrenamiento funcional." },
+        { "name": "Par de mancuernas hexagonales de 5 kg", "category": "materiales", "price": "38.00", "stock": 6, "condition": "nuevo", "images": ["mancuernas"],
+          "description": "Mancuernas hexagonales recubiertas de hule que no ruedan ni rayan el piso, mango de acero cromado moleteado. Precio por el par (2 × 5 kg)." }
+      ]
+    }
+  ],
+  "ventures": [
+    {
+      "key": "puntadas-de-luna",
+      "name": "Puntadas de Luna",
+      "category": "ropa",
+      "colors": ["#7C3AED", "#F9A8D4"],
+      "monogram": "PL",
+      "owner": { "name": "Daniela Beatriz Rivas Portillo", "username": "puntadasdeluna", "email": "daniela.rivas@estudiantes.lauapp.es", "campus": "uca.edu.sv", "carrera": "Licenciatura en Diseño" },
+      "description": "Tejidos a crochet hechos a mano por una estudiante de Diseño. Amigurumis, bolsos y accesorios por encargo 🧶",
+      "products": [
+        { "name": "Amigurumi de graduado tejido a crochet (15 cm)", "category": "ropa", "price": "12.00", "stock": 3, "condition": "nuevo", "images": ["amigurumi"],
+          "description": "Muñequito con toga y birrete, tejido con hilo de algodón y relleno hipoalergénico, ojos de seguridad. Lo hago con los colores de tu universidad por encargo (5 días). El regalo perfecto para una graduación." },
+        { "name": "Bolso tote tejido a mano", "category": "ropa", "price": "25.00", "stock": 2, "condition": "nuevo", "images": ["bolso-crochet"],
+          "description": "Bolso de hilo de algodón con forro de tela y asas reforzadas. Cabe una laptop de 13\". Colores a elección." },
+        { "name": "Gorro tejido estilo beanie", "category": "ropa", "price": "10.00", "stock": 4, "condition": "nuevo", "images": ["gorro-tejido"],
+          "description": "Gorro de crochet en hilo acrílico suave. Talla única. Escribime para elegir color." },
+        { "name": "llaveros de crochet", "category": "ropa", "price": "3.00", "stock": 10, "condition": "nuevo", "images": ["llaveros-crochet"],
+          "description": "varios diseños, preguntar disponibilidad" }
+      ]
+    },
+    {
+      "key": "stickerazo-sv",
+      "name": "Stickerazo SV",
+      "category": "materiales",
+      "colors": ["#F43F5E", "#FDE047"],
+      "monogram": "S!",
+      "owner": { "name": "Kevin Alexander Mejía Flores", "username": "stickerazo_sv", "email": "kevin.mejia@estudiantes.lauapp.es", "campus": "utec.edu.sv", "carrera": "Licenciatura en Diseño Grafico" },
+      "description": "Stickers de vinil diseñados en El Salvador para tu laptop, termo o cuaderno.",
+      "products": [
+        { "name": "Pack de 20 stickers de vinil resistentes al agua", "category": "materiales", "price": "5.00", "stock": 25, "condition": "nuevo", "images": ["stickers-laptop"],
+          "description": "Vinil mate con laminado UV: no se destiñe ni se despega al lavar el termo. Diseños de memes salvadoreños, programación y plantas. Cada sticker mide entre 5 y 8 cm." },
+        { "name": "Stickers personalizados con tu diseño (mínimo 10)", "category": "servicios", "price": "6.00", "stock": 50, "condition": null, "images": ["stickers-hoja"],
+          "description": "Mandame tu logo o dibujo y te lo imprimo y troquelo. Precio por 10 unidades de hasta 7 cm. Entrega en 3 días." },
+        { "name": "stickers de anime $1 c/u", "category": "materiales", "price": "1.00", "stock": 40, "condition": "nuevo", "images": ["stickers-variados"],
+          "description": "hay de varios, pregunten" }
+      ]
+    },
+    {
+      "key": "dulce-parcial",
+      "name": "Dulce Parcial",
+      "category": "servicios",
+      "colors": ["#BE185D", "#FDE68A"],
+      "monogram": "DP",
+      "owner": { "name": "Andrea Sofía Guevara Martínez", "username": "dulce_parcial", "email": "andrea.guevara@estudiantes.lauapp.es", "campus": "itca.edu.sv", "carrera": "Técnico en Gastronomía" },
+      "description": "Postres caseros horneados por una estudiante de Gastronomía. Pedidos con un día de anticipación.",
+      "products": [
+        { "name": "Brownies de chocolate con nueces (caja de 6)", "category": "servicios", "price": "6.00", "stock": 8, "condition": null, "images": ["brownies"],
+          "description": "Brownies húmedos de chocolate semiamargo con nueces, horneados el día de la entrega. Caja de cartón kraft con 6 unidades. Avisame si querés sin nueces." },
+        { "name": "Cheesecake de fresa (porción)", "category": "servicios", "price": "2.50", "stock": 10, "condition": null, "images": ["cheesecake"],
+          "description": "Base de galleta, relleno de queso crema horneado y mermelada de fresa casera. Se entrega en vasito con tapa." },
+        { "name": "Alfajores de maicena con dulce de leche (docena)", "category": "servicios", "price": "7.00", "stock": 6, "condition": null, "images": ["alfajores"],
+          "description": "Suaves, con dulce de leche y coco rallado en el borde. Duran 5 días en recipiente cerrado." },
+        { "name": "cupcakes", "category": "servicios", "price": "1.50", "stock": 24, "condition": null, "images": ["cupcakes"],
+          "description": "$1.50 c/u, decorados para cumple. pedidos minimo 6" },
+        { "name": "pastel tres leches entero", "category": "servicios", "price": "18.00", "stock": 2, "condition": null, "images": ["tres-leches"],
+          "description": "para 12 personas aprox, encargar con 2 dias" }
+      ]
+    },
+    {
+      "key": "capa-por-capa-3d",
+      "name": "Capa por Capa 3D",
+      "category": "electronica",
+      "colors": ["#EA580C", "#1E293B"],
+      "monogram": "3D",
+      "owner": { "name": "José Fernando Ayala Rosales", "username": "capaporcapa3d", "email": "jose.ayala@estudiantes.lauapp.es", "campus": "udb.edu.sv", "carrera": "Ingeniería Mecatrónica" },
+      "description": "Impresión 3D en PLA y PETG para proyectos, maquetas y regalos. Estudiante de Mecatrónica con dos impresoras en casa.",
+      "products": [
+        { "name": "Impresión 3D por pieza (cotizá tu archivo STL)", "category": "servicios", "price": "5.00", "stock": 30, "condition": null, "images": ["impresora-3d"],
+          "description": "Imprimo en PLA o PETG con capa de 0.2 mm, área máxima de 22 × 22 × 25 cm. El precio base es para piezas pequeñas (hasta 40 g); mandame el STL por el chat y te cotizo. Ideal para prototipos de Mecatrónica, Diseño Industrial y Arquitectura." },
+        { "name": "Soporte para celular impreso en 3D", "category": "tecnologia", "price": "4.00", "stock": 8, "condition": "nuevo", "images": ["soporte-celular-3d"],
+          "description": "Soporte de escritorio con ángulo para ver clases o videollamadas. Varios colores." },
+        { "name": "Maceta geométrica impresa en 3D", "category": "materiales", "price": "6.00", "stock": 5, "condition": "nuevo", "images": ["maceta-3d"],
+          "description": "Maceta low-poly de 10 cm con plato para drenaje, perfecta para suculentas." },
+        { "name": "llaveros personalizados 3d", "category": "materiales", "price": "2.00", "stock": 20, "condition": "nuevo", "images": ["llavero-3d"],
+          "description": "con tu nombre o logo de tu carrera" }
+      ]
+    },
+    {
+      "key": "segunda-vuelta-thrift",
+      "name": "Segunda Vuelta Thrift",
+      "category": "ropa",
+      "colors": ["#92400E", "#FCD34D"],
+      "monogram": "SV",
+      "owner": { "name": "Gabriela Alejandra Pineda Castro", "username": "segundavuelta", "email": "gabriela.pineda@estudiantes.lauapp.es", "campus": "ufg.edu.sv", "carrera": "Licenciatura en Diseño de Modas" },
+      "description": "Ropa de segunda mano seleccionada, lavada y lista para usar. Moda circular hecha por estudiantes ♻️",
+      "products": [
+        { "name": "Chaqueta de mezclilla vintage talla M", "category": "ropa", "price": "18.00", "stock": 1, "condition": "buen_estado", "images": ["chaqueta-mezclilla"],
+          "description": "Mezclilla gruesa en azul deslavado, corte clásico. Medidas: pecho 52 cm, largo 64 cm. Sin rotos ni manchas." },
+        { "name": "Camisa de franela a cuadros talla L", "category": "ropa", "price": "9.00", "stock": 1, "condition": "como_nuevo", "images": ["camisa-franela"],
+          "description": "Franela suave roja y negra, como nueva. Ideal para el frío de las mañanas." },
+        { "name": "Tenis Converse Chuck Taylor All Star talla 38", "category": "ropa", "price": "22.00", "stock": 1, "condition": "buen_estado", "images": ["converse"],
+          "description": "Originales, lona negra de caña baja. Suela con poco desgaste, lavados." },
+        { "name": "lote de blusas talla S", "category": "ropa", "price": "12.00", "stock": 1, "condition": "buen_estado", "images": ["blusas-percha"],
+          "description": "5 blusas, precio por todo el lote" }
+      ]
+    },
+    {
+      "key": "fundalab",
+      "name": "FundaLab",
+      "category": "tecnologia",
+      "colors": ["#0EA5E9", "#0F172A"],
+      "monogram": "FL",
+      "owner": { "name": "Diego Armando Castillo Henríquez", "username": "fundalab_sv", "email": "diego.castillo@estudiantes.lauapp.es", "campus": "unab.edu.sv", "carrera": "Ingeniería en Sistemas y Computación" },
+      "description": "Fundas, cables y protectores para tu celular a precio de estudiante. Entrego en la UNAB.",
+      "products": [
+        { "name": "Funda transparente antigolpes para iPhone 13", "category": "tecnologia", "price": "8.00", "stock": 6, "condition": "nuevo", "images": ["funda-celular"],
+          "description": "TPU flexible con esquinas reforzadas y bordes elevados que protegen cámara y pantalla. No se pone amarilla. También hay para iPhone 14 y Samsung A54." },
+        { "name": "Cable USB-C a USB-C trenzado 1 m (60 W)", "category": "electronica", "price": "5.00", "stock": 15, "condition": "nuevo", "images": ["cable-usb-c"],
+          "description": "Cable de nylon trenzado con carga rápida de hasta 60 W y transferencia de datos. Funciona con celulares, tablets y laptops USB-C." },
+        { "name": "vidrio templado", "category": "tecnologia", "price": "3.50", "stock": 20, "condition": "nuevo", "images": ["protector-pantalla"],
+          "description": "para varios modelos, preguntar. te lo pongo gratis" },
+        { "name": "popsocket", "category": "tecnologia", "price": "3.00", "stock": 10, "condition": "nuevo", "images": ["agarre-celular"],
+          "description": "" }
+      ]
+    },
+    {
+      "key": "hilo-y-jade",
+      "name": "Hilo y Jade",
+      "category": "ropa",
+      "colors": ["#047857", "#A7F3D0"],
+      "monogram": "HJ",
+      "owner": { "name": "María José Hernández Calderón", "username": "hiloyjade", "email": "mariajose.hernandez@estudiantes.lauapp.es", "campus": "ugb.edu.sv", "carrera": "Licenciatura en Marketing" },
+      "description": "Pulseras y collares artesanales con hilo encerado y piedras. Hechos a mano en San Miguel.",
+      "products": [
+        { "name": "Pulsera de hilo encerado con cuentas de piedra", "category": "ropa", "price": "4.00", "stock": 15, "condition": "nuevo", "images": ["pulsera-cuentas"],
+          "description": "Ajustable, resistente al agua. Cuentas de piedra natural en verde, morado o turquesa." },
+        { "name": "Pulseras de la amistad (par)", "category": "ropa", "price": "5.00", "stock": 10, "condition": "nuevo", "images": ["pulseras-amistad"],
+          "description": "Tejidas en macramé, se pueden personalizar con colores de tu carrera o tu equipo." },
+        { "name": "collar de cuentas", "category": "ropa", "price": "6.00", "stock": 5, "condition": "nuevo", "images": ["collar-cuentas"],
+          "description": "hecho a mano" }
+      ]
+    },
+    {
+      "key": "tutorias-pitagoras",
+      "name": "Tutorías Pitágoras",
+      "category": "servicios",
+      "colors": ["#1D4ED8", "#FACC15"],
+      "monogram": "π",
+      "owner": { "name": "Luis Enrique Martínez Orellana", "username": "tutor_pitagora", "email": "luis.martinez@estudiantes.lauapp.es", "campus": "ues.edu.sv", "carrera": "Licenciatura en Matemática" },
+      "description": "Tutorías de matemática, física y programación con un estudiante de último año de Matemática. Grupos de hasta 4 personas en la biblioteca.",
+      "products": [
+        { "name": "Tutoría de Cálculo I (1 hora, presencial en campus)", "category": "servicios", "price": "8.00", "stock": 20, "condition": null, "images": ["pizarra-calculo"],
+          "description": "Límites, derivadas y aplicaciones, con ejercicios de las guías de tu cátedra. Me enviás los temas por el chat y preparo la sesión. Grupo de hasta 4 personas, mismo precio por persona." },
+        { "name": "Tutoría de Física I: resolución de guías", "category": "servicios", "price": "8.00", "stock": 20, "condition": null, "images": ["pizarra-fisica"],
+          "description": "Cinemática, dinámica, trabajo y energía. Resolvemos juntos los problemas de tu guía y te dejo ejercicios similares para practicar antes del parcial." },
+        { "name": "Asesoría de programación en Python (1 hora)", "category": "servicios", "price": "10.00", "stock": 15, "condition": null, "images": ["laptop-codigo"],
+          "description": "Desde lo básico hasta listas, diccionarios, funciones y archivos. Traé tu laptop; también reviso tareas de Programación I." },
+        { "name": "Paquete de 4 tutorías de Álgebra Lineal", "category": "servicios", "price": "28.00", "stock": 5, "condition": null, "images": ["apuntes-matematica"],
+          "description": "Matrices, determinantes, espacios vectoriales y transformaciones lineales en 4 sesiones de 1 hora. Ahorrás $4 frente a pagarlas por separado." }
+      ]
+    }
+  ],
+  "students": [
+    {
+      "owner": { "name": "Carlos Eduardo Ramírez López", "username": "carlos_ramirez", "email": "carlos.ramirez@estudiantes.lauapp.es", "campus": "ues.edu.sv", "carrera": "Ingeniería Civil" },
+      "products": [
+        { "name": "Calculadora graficadora Texas Instruments TI-84 Plus CE", "category": "electronica", "price": "95.00", "stock": 1, "condition": "como_nuevo", "images": ["ti-84"],
+          "delivery_point": "Biblioteca de la Facultad de Ingeniería",
+          "description": "La compré hace un año para Métodos Numéricos y ya no la necesito. Pantalla a color sin rayones, batería recargable que dura toda la semana, incluye cable USB y tapa protectora. Funciona perfecto (la puedo encender frente a vos). Precio negociable un poco." },
+        { "name": "Mecánica vectorial para ingenieros: Estática – Beer & Johnston (11.ª ed.)", "category": "libros", "price": "25.00", "stock": 1, "condition": "buen_estado", "images": ["libro-estatica"],
+          "delivery_point": "Biblioteca de la Facultad de Ingeniería",
+          "description": "Edición en español. Tiene algunas páginas subrayadas con lápiz en los capítulos 2 a 4, sin hojas rotas ni sueltas. Es el libro de Estática / Mecánica I." }
+      ]
+    },
+    {
+      "owner": { "name": "Jennifer Marisol Ventura Aguilar", "username": "jenni_ventura", "email": "jennifer.ventura@estudiantes.lauapp.es", "campus": "uca.edu.sv", "carrera": "Licenciatura en Psicología" },
+      "products": [
+        { "name": "vendo calcu", "category": "electronica", "price": "10.00", "stock": 1, "condition": "buen_estado", "images": ["casio-usada"],
+          "description": "esta buena la use un ciclo nomas" }
+      ]
+    },
+    {
+      "owner": { "name": "Bryan Josué Hernández Mejía", "username": "bryan_hdz", "email": "bryan.hernandez@estudiantes.lauapp.es", "campus": "utec.edu.sv", "carrera": "Licenciatura en Informática" },
+      "products": [
+        { "name": "Laptop Lenovo ThinkPad T480 – Core i5 8.ª gen, 16 GB RAM, SSD 256 GB", "category": "tecnologia", "price": "260.00", "stock": 1, "condition": "buen_estado", "images": ["thinkpad"],
+          "description": "Pantalla de 14\" Full HD, Windows 11 Pro original, batería con 3 horas reales de uso. Teclado en español con retroiluminación. Tiene un pequeño desgaste en la tapa (se ve en la foto), todo lo demás funciona: puertos USB-C, HDMI, cámara y wifi. Incluye cargador original de 65 W. Ideal para programar." },
+        { "name": "MOUSE GAMER RGB CASI NUEVO", "category": "tecnologia", "price": "12.00", "stock": 1, "condition": "como_nuevo", "images": ["mouse-gamer"],
+          "description": "SOLO TIENE 2 MESES DE USO, 7200 DPI. ENTREGO EN LA UTEC" }
+      ]
+    },
+    {
+      "owner": { "name": "Katherine Michelle Flores Navarrete", "username": "kathy_flores", "email": "katherine.flores@estudiantes.lauapp.es", "campus": "udb.edu.sv", "carrera": "Ingeniería Biomedica" },
+      "products": [
+        { "name": "Bata blanca talla M", "category": "ropa", "price": "8.00", "stock": 1, "condition": "aceptable", "images": ["bata-usada"],
+          "description": "usada 2 ciclos, tiene una manchita pequeña en la manga pero no se nota" },
+        { "name": "kit de diseccion", "category": "materiales", "price": "10.00", "stock": 1, "condition": "buen_estado", "images": ["kit-diseccion"],
+          "description": "completo, solo le falta un bisturi" }
+      ]
+    },
+    {
+      "owner": { "name": "Óscar René Martínez Pérez", "username": "oscar_rene", "email": "oscar.martinez@estudiantes.lauapp.es", "campus": "ugb.edu.sv", "carrera": "Ingeniería en Desarrollo de Software" },
+      "products": [
+        { "name": "Samsung Galaxy A54 5G de 128 GB, liberado", "category": "tecnologia", "price": "190.00", "stock": 1, "condition": "buen_estado", "images": ["samsung-galaxy"],
+          "description": "8 GB de RAM, color negro, liberado para cualquier compañía. Siempre usó funda y vidrio templado, la pantalla está impecable. Batería al 89 %. Incluye caja, cable y funda. Lo vendo porque me cambié de teléfono." },
+        { "name": "cargador", "category": "electronica", "price": "5.00", "stock": 1, "condition": "buen_estado", "images": ["cargador-celular"],
+          "description": "original" }
+      ]
+    },
+    {
+      "owner": { "name": "Valeria Alejandra Romero Sánchez", "username": "vale_romero", "email": "valeria.romero@estudiantes.lauapp.es", "campus": "ufg.edu.sv", "carrera": "Licenciatura en Animación Digital y Videojuegos" },
+      "products": [
+        { "name": "Tableta gráfica Wacom Intuos S (CTL-4100)", "category": "tecnologia", "price": "45.00", "stock": 1, "condition": "como_nuevo", "images": ["wacom"],
+          "description": "4 096 niveles de presión, lápiz sin batería con 3 puntas de repuesto. Compatible con Windows, Mac y Chromebook. La usé un ciclo para Ilustración Digital; me pasé a una tablet con pantalla. Incluye cable USB y caja original." },
+        { "name": "audifonos casi nuevos", "category": "tecnologia", "price": "15.00", "stock": 1, "condition": "como_nuevo", "images": ["audifonos-usados"],
+          "description": "solo los use un mes" }
+      ]
+    },
+    {
+      "owner": { "name": "Fernando José Quintanilla Ruiz", "username": "fer_quintanilla", "email": "fernando.quintanilla@estudiantes.lauapp.es", "campus": "itca.edu.sv", "carrera": "Técnico en Ingeniería Mecanica Opción Mantenimiento Industrial" },
+      "products": [
+        { "name": "Juego de llaves combinadas de 8 a 19 mm (12 piezas)", "category": "materiales", "price": "20.00", "stock": 1, "condition": "buen_estado", "images": ["llaves-combinadas"],
+          "description": "Acero cromo vanadio, con su estuche enrollable. Las usé en el taller de primer año, están completas y sin desgaste en las bocas." },
+        { "name": "bicicleta", "category": "materiales", "price": "80.00", "stock": 1, "condition": "aceptable", "images": ["bicicleta"],
+          "description": "rin 26, frenos buenos, los cambios hay que calibrarlos" },
+        { "name": "casco", "category": "materiales", "price": "10.00", "stock": 1, "condition": "buen_estado", "images": ["casco-bici"],
+          "description": "de bici" }
+      ]
+    },
+    {
+      "owner": { "name": "Ana Lucía Molina Cáceres", "username": "anilu_molina", "email": "analucia.molina@estudiantes.lauapp.es", "campus": "ujmd.edu.sv", "carrera": "Arquitectura de Interiores" },
+      "products": [
+        { "name": "Silla de escritorio ergonómica con soporte lumbar (usada)", "category": "materiales", "price": "45.00", "stock": 1, "condition": "buen_estado", "images": ["silla-oficina"],
+          "description": "Respaldo de malla, altura ajustable, brazos fijos y ruedas en buen estado. La usé dos años en mi cuarto para estudiar. El pistón funciona bien. Te la llevo al campus si tenés cómo trasladarla, o la recogés en Antiguo Cuscatlán." },
+        { "name": "Escritorio plegable para cuarto o apartamento", "category": "materiales", "price": "30.00", "stock": 1, "condition": "buen_estado", "images": ["escritorio"],
+          "description": "100 × 50 cm, de melamina blanca y patas metálicas. Se arma en 5 minutos. Perfecto si vivís en un cuarto pequeño." },
+        { "name": "lampara de escritorio led", "category": "electronica", "price": "8.00", "stock": 1, "condition": "como_nuevo", "images": ["lampara-escritorio"],
+          "description": "3 tonos de luz" }
+      ]
+    },
+    {
+      "owner": { "name": "Ricardo Antonio Guzmán Orellana", "username": "ricky_guzman", "email": "ricardo.guzman@estudiantes.lauapp.es", "campus": "unab.edu.sv", "carrera": "Licenciatura en Laboratorio Clínico" },
+      "products": [
+        { "name": "Microscopio óptico para estudiante 40x–1000x", "category": "materiales", "price": "60.00", "stock": 1, "condition": "buen_estado", "images": ["microscopio"],
+          "description": "Monocular con cuatro objetivos (4x, 10x, 40x y 100x de inmersión), luz LED regulable y platina mecánica. Ideal para practicar en casa Hematología y Parasitología. Incluye funda contra polvo y aceite de inmersión." },
+        { "name": "libro de bioquimica lehninger", "category": "libros", "price": "30.00", "stock": 1, "condition": "buen_estado", "images": ["libro-bioquimica"],
+          "description": "5ta edicion, en español. tiene nombre en la primera pagina" }
+      ]
+    },
+    {
+      "owner": { "name": "Paola Beatriz Cruz Alvarado", "username": "pao_cruz", "email": "paola.cruz@estudiantes.lauapp.es", "campus": "usam.edu.sv", "carrera": "Medicina" },
+      "products": [
+        { "name": "Estetoscopio Littmann Classic III (color negro)", "category": "materiales", "price": "70.00", "stock": 1, "condition": "como_nuevo", "images": ["littmann"],
+          "description": "Original, comprado en una distribuidora médica (tengo la factura). Diafragma de frecuencia ajustable en ambos lados de la campana. Lo usé un año en prácticas; lo vendo porque me regalaron uno cardiológico. Viene con su caja y olivas de repuesto." },
+        { "name": "libro de anatomia", "category": "libros", "price": "15.00", "stock": 1, "condition": "aceptable", "images": ["libro-anatomia-usado"],
+          "description": "Latarjet tomo 1, tiene subrayado y algunas notas" }
+      ]
+    },
+    {
+      "owner": { "name": "Javier Alexander Portillo Lemus", "username": "javi_portillo", "email": "javier.portillo@estudiantes.lauapp.es", "campus": "ues.edu.sv", "carrera": "Licenciatura en Contaduría Pública" },
+      "products": [
+        { "name": "libro calculo buen estado", "category": "libros", "price": "12.00", "stock": 1, "condition": "buen_estado", "images": ["libro-calculo-usado"],
+          "description": "Leithold" },
+        { "name": "Calculadora financiera HP 10bII+", "category": "electronica", "price": "25.00", "stock": 1, "condition": "buen_estado", "images": ["calculadora-financiera"],
+          "description": "Para Matemática Financiera y Finanzas: VAN, TIR, amortizaciones y depreciación. Funciona perfecto, con pilas nuevas y su funda." }
+      ]
+    },
+    {
+      "owner": { "name": "Stefany Gabriela Reyes Bonilla", "username": "stef_reyes", "email": "stefany.reyes@estudiantes.lauapp.es", "campus": "uca.edu.sv", "carrera": "Licenciatura en Comunicación Social" },
+      "products": [
+        { "name": "Cámara Canon EOS Rebel T6 con lente 18-55 mm", "category": "tecnologia", "price": "280.00", "stock": 1, "condition": "buen_estado", "images": ["canon-rebel"],
+          "description": "18 MP, Wi-Fi para pasar fotos al celular, video Full HD. Aproximadamente 9 000 disparos. Incluye dos baterías, cargador, memoria SD de 32 GB, correa y bolso. Perfecta para Fotografía I y Producción Audiovisual. Se puede probar en el campus." },
+        { "name": "tripode", "category": "tecnologia", "price": "10.00", "stock": 1, "condition": "buen_estado", "images": ["tripode"],
+          "description": "lo de la foto" }
+      ]
+    },
+    {
+      "owner": { "name": "Mauricio Ernesto Alvarenga Díaz", "username": "mau_alvarenga", "email": "mauricio.alvarenga@estudiantes.lauapp.es", "campus": "utec.edu.sv", "carrera": "Técnico en Redes Computacionales" },
+      "products": [
+        { "name": "Router wifi doble banda AC1200", "category": "tecnologia", "price": "20.00", "stock": 1, "condition": "buen_estado", "images": ["router-wifi"],
+          "description": "2.4 y 5 GHz, 4 antenas, lo usaba en el apartamento. Lo reseteé de fábrica. Incluye fuente de poder." },
+        { "name": "VENDO CABLE DE RED CAT 6 DE 15 METROS", "category": "electronica", "price": "5.00", "stock": 1, "condition": "como_nuevo", "images": ["cable-red"],
+          "description": "NUEVO SIN USAR, ME SOBRO DE UN PROYECTO" }
+      ]
+    },
+    {
+      "owner": { "name": "Gabriela Nohemy Sorto Ventura", "username": "gaby_sorto", "email": "gabriela.sorto@estudiantes.lauapp.es", "campus": "udb.edu.sv", "carrera": "Licenciatura en Diseño Industrial" },
+      "products": [
+        { "name": "Monitor Dell de 24\" Full HD (P2419H)", "category": "tecnologia", "price": "85.00", "stock": 1, "condition": "buen_estado", "images": ["monitor-dell"],
+          "description": "Panel IPS de 23.8\", HDMI, DisplayPort y puertos USB. Base ajustable en altura y giratoria (se puede poner vertical). Sin píxeles muertos. Incluye cable HDMI y de corriente." },
+        { "name": "mini refri", "category": "electronica", "price": "60.00", "stock": 1, "condition": "buen_estado", "images": ["mini-refri"],
+          "description": "para el cuarto, enfria bien. me voy del apartamento" }
+      ]
+    },
+    {
+      "owner": { "name": "Christian Adonay López Membreño", "username": "chris_lopez", "email": "christian.lopez@estudiantes.lauapp.es", "campus": "itca.edu.sv", "carrera": "Técnico en Hardware Computacional" },
+      "products": [
+        { "name": "Raspberry Pi 4 Model B (4 GB) con case, ventilador y fuente oficial", "category": "electronica", "price": "55.00", "stock": 1, "condition": "como_nuevo", "images": ["raspberry-pi"],
+          "description": "Incluye case de acrílico con ventilador, disipadores, fuente USB-C de 3 A y microSD de 32 GB con Raspberry Pi OS instalado. La usé para un proyecto de domótica, funciona perfecto." },
+        { "name": "Kit Arduino Uno con sensores", "category": "electronica", "price": "25.00", "stock": 1, "condition": "buen_estado", "images": ["arduino"],
+          "description": "trae ultrasonico, servo, leds, resistencias y cables. falta el sensor de temperatura" },
+        { "name": "se vende", "category": "electronica", "price": "3.00", "stock": 1, "condition": "buen_estado", "images": ["protoboard"],
+          "description": "pregunten" }
+      ]
+    },
+    {
+      "owner": { "name": "Melissa Carolina Aguilar Funes", "username": "meli_aguilar", "email": "melissa.aguilar@estudiantes.lauapp.es", "campus": "ugb.edu.sv", "carrera": "Licenciatura en Idioma Inglés" },
+      "products": [
+        { "name": "Libro de inglés Interchange 2 (5th edition) con workbook", "category": "libros", "price": "18.00", "stock": 1, "condition": "buen_estado", "images": ["libro-ingles"],
+          "description": "Student's book y workbook. El workbook está resuelto con lápiz hasta la unidad 4 (se puede borrar). Sirve para Inglés Intermedio I y II." },
+        { "name": "ventilador", "category": "electronica", "price": "12.00", "stock": 1, "condition": "buen_estado", "images": ["ventilador"],
+          "description": "de mesa 3 velocidades" }
+      ]
+    }
+  ],
+  "images": {
+    "libro-calculo-nuevo": { "query": ["calculus textbook", "mathematics textbook"] },
+    "libro-fisica": { "query": ["physics textbook", "physics books"] },
+    "libro-quimica": { "query": ["chemistry textbook", "chemistry book"] },
+    "libros-programacion": { "query": ["programming books", "computer programming books shelf"] },
+    "atlas-anatomia": { "query": ["anatomy atlas book", "Gray's anatomy book"] },
+    "diccionario-bilingue": { "query": ["Spanish English dictionary", "dictionary book"] },
+    "tabla-periodica": { "query": ["periodic table chart", "periodic table poster"] },
+    "mouse-logitech": { "query": ["Logitech wireless mouse", "wireless computer mouse"] },
+    "teclado-mecanico": { "query": ["60% mechanical keyboard", "mechanical keyboard"] },
+    "audifonos-over-ear": { "query": ["wireless headphones over-ear", "headphones"] },
+    "cargador-usb-c": { "query": ["USB-C GaN charger", "USB-C charger"] },
+    "hub-usb-c": { "query": ["USB-C hub", "USB hub"] },
+    "memoria-usb": { "query": ["SanDisk USB flash drive", "USB flash drive"] },
+    "ssd-externo": { "query": ["portable SSD", "external solid state drive"] },
+    "bata-laboratorio": { "query": ["lab coat", "laboratory coat white"] },
+    "scrubs": { "query": ["scrubs medical uniform", "surgical scrubs"] },
+    "estetoscopio": { "query": ["stethoscope", "stethoscope isolated"] },
+    "zuecos-clinicos": { "query": ["clogs shoes", "nursing clogs"] },
+    "gorro-quirurgico": { "query": ["surgical cap", "scrub cap"] },
+    "gafas-seguridad": { "query": ["safety goggles", "safety glasses laboratory"] },
+    "bordado": { "query": ["embroidery machine", "machine embroidery"] },
+    "lapices-colores": { "query": ["colored pencils", "coloured pencils"] },
+    "sketchbook": { "query": ["sketchbook", "sketch book drawing"] },
+    "marcadores-alcohol": { "query": ["alcohol markers", "copic markers"] },
+    "acuarelas": { "query": ["watercolor paint set", "watercolour pan set"] },
+    "tablero-dibujo": { "query": ["drawing board parallel ruler", "drafting board"] },
+    "lapices-grafito": { "query": ["graphite pencils set", "drawing pencils"] },
+    "base-corte": { "query": ["cutting mat craft knife", "self healing cutting mat"] },
+    "casio-fx991": { "query": ["Casio fx-991", "Casio scientific calculator"] },
+    "casio-fx82": { "query": ["Casio fx-82", "Casio fx-82 calculator"] },
+    "cuaderno-espiral": { "query": ["spiral notebook", "spiral bound notebook"] },
+    "boligrafos-gel": { "query": ["gel pens", "ballpoint pens"] },
+    "resaltadores": { "query": ["highlighter pens", "highlighters"] },
+    "resma-papel": { "query": ["ream of paper", "printer paper ream"] },
+    "escalimetro": { "query": ["architect scale ruler", "triangular scale ruler"] },
+    "cafe-molido": { "query": ["ground coffee", "coffee beans roasted"] },
+    "pan-con-pollo": { "query": ["pan con pollo", "chicken sandwich"] },
+    "pupusas": { "query": ["pupusas", "pupusa El Salvador"] },
+    "quesadilla-salvadorena": { "query": ["quesadilla salvadoreña", "Salvadoran quesadilla"] },
+    "horchata": { "query": ["horchata", "horchata de morro"] },
+    "termo-acero": { "query": ["stainless steel thermos", "vacuum flask"] },
+    "empastado-tesis": { "query": ["hardcover thesis", "bound thesis"] },
+    "anillado": { "query": ["spiral binding", "comb binding"] },
+    "impresora-laser": { "query": ["laser printer", "office laser printer"] },
+    "impresion-color": { "query": ["color printouts", "printed paper sheets"] },
+    "poster-cientifico": { "query": ["scientific poster", "academic poster session"] },
+    "tarjetas-presentacion": { "query": ["business cards", "stack of business cards"] },
+    "plotter": { "query": ["large format printer plotter", "wide format printer"] },
+    "balon-futbol": { "query": ["football size 5 ball", "soccer ball"] },
+    "balon-baloncesto": { "query": ["basketball ball", "basketball"] },
+    "balon-voleibol": { "query": ["volleyball ball", "volleyball"] },
+    "mat-yoga": { "query": ["yoga mat", "rolled yoga mat"] },
+    "botella-deportiva": { "query": ["sports water bottle", "plastic water bottle sport"] },
+    "cuerda-saltar": { "query": ["jump rope", "skipping rope"] },
+    "mancuernas": { "query": ["hex dumbbells", "dumbbells"] },
+    "amigurumi": { "query": ["amigurumi turtle", "amigurumi"] },
+    "bolso-crochet": { "query": ["crochet bag", "crocheted tote bag"] },
+    "gorro-tejido": { "query": ["crochet beanie", "knitted hat"] },
+    "llaveros-crochet": { "query": ["crochet keychain", "crochet keyring"] },
+    "stickers-laptop": { "query": ["laptop stickers", "stickers on laptop"] },
+    "stickers-hoja": { "query": ["vinyl stickers sheet", "die cut stickers"] },
+    "stickers-variados": { "query": ["sticker collection", "stickers"] },
+    "brownies": { "query": ["chocolate brownies", "brownies"] },
+    "cheesecake": { "query": ["strawberry cheesecake", "cheesecake slice"] },
+    "alfajores": { "query": ["alfajores", "alfajores de maicena"] },
+    "cupcakes": { "query": ["cupcakes", "decorated cupcakes"] },
+    "tres-leches": { "query": ["tres leches cake", "pastel de tres leches"] },
+    "impresora-3d": { "query": ["3D printer printing", "FDM 3D printer"] },
+    "soporte-celular-3d": { "query": ["3D printed phone stand", "3D printed stand"] },
+    "maceta-3d": { "query": ["3D printed planter", "3D printed vase"] },
+    "llavero-3d": { "query": ["3D printed keychain", "3D printed objects"] },
+    "chaqueta-mezclilla": { "query": ["denim jacket", "jean jacket"] },
+    "camisa-franela": { "query": ["flannel shirt", "plaid shirt"] },
+    "converse": { "query": ["Converse Chuck Taylor black", "Converse All Star"] },
+    "blusas-percha": { "query": ["blouses on hangers", "clothes on hangers"] },
+    "funda-celular": { "query": ["clear phone case", "smartphone case"] },
+    "cable-usb-c": { "query": ["USB-C cable", "USB Type-C cable"] },
+    "protector-pantalla": { "query": ["tempered glass screen protector", "screen protector"] },
+    "agarre-celular": { "query": ["PopSocket", "phone grip"] },
+    "pulsera-cuentas": { "query": ["beaded bracelet", "stone bead bracelet"] },
+    "pulseras-amistad": { "query": ["friendship bracelets", "macrame bracelet"] },
+    "collar-cuentas": { "query": ["bead necklace", "beaded necklace"] },
+    "pizarra-calculo": { "query": ["calculus blackboard", "blackboard mathematics equations"] },
+    "pizarra-fisica": { "query": ["physics equations whiteboard", "physics blackboard"] },
+    "laptop-codigo": { "query": ["laptop programming code", "laptop with source code"] },
+    "apuntes-matematica": { "query": ["mathematics notes notebook", "math homework notebook"] },
+    "ti-84": { "query": ["TI-84 Plus CE", "TI-84 Plus"] },
+    "libro-estatica": { "query": ["engineering mechanics statics book", "used textbook"] },
+    "casio-usada": { "query": ["Casio fx-570", "Casio fx-350"] },
+    "thinkpad": { "query": ["ThinkPad T480", "Lenovo ThinkPad T470"] },
+    "mouse-gamer": { "query": ["gaming mouse RGB", "gaming mouse"] },
+    "bata-usada": { "query": ["lab coat hanging", "white coat hanger"] },
+    "kit-diseccion": { "query": ["dissection kit", "dissecting instruments"] },
+    "samsung-galaxy": { "query": ["Samsung Galaxy A54", "Samsung Galaxy A52"] },
+    "cargador-celular": { "query": ["phone charger USB wall", "USB power adapter"] },
+    "wacom": { "query": ["Wacom Intuos", "graphics tablet pen"] },
+    "audifonos-usados": { "query": ["Sony headphones", "on-ear headphones"] },
+    "llaves-combinadas": { "query": ["combination wrench set", "spanner set"] },
+    "bicicleta": { "query": ["mountain bike", "mountain bicycle 26"] },
+    "casco-bici": { "query": ["bicycle helmet", "bike helmet"] },
+    "silla-oficina": { "query": ["office chair mesh", "office chair"] },
+    "escritorio": { "query": ["white desk", "computer desk"] },
+    "lampara-escritorio": { "query": ["LED desk lamp", "desk lamp"] },
+    "microscopio": { "query": ["student microscope", "light microscope"] },
+    "libro-bioquimica": { "query": ["Lehninger biochemistry", "biochemistry textbook"] },
+    "littmann": { "query": ["Littmann stethoscope", "Littmann Classic"] },
+    "libro-anatomia-usado": { "query": ["anatomy textbook", "old anatomy book"] },
+    "libro-calculo-usado": { "query": ["calculus book", "old mathematics book"] },
+    "calculadora-financiera": { "query": ["HP 10bII", "HP financial calculator"] },
+    "canon-rebel": { "query": ["Canon EOS 1300D", "Canon EOS Rebel T6"] },
+    "tripode": { "query": ["camera tripod", "tripod"] },
+    "router-wifi": { "query": ["TP-Link Archer router", "wireless router"] },
+    "cable-red": { "query": ["Cat 6 ethernet cable", "ethernet cable coiled"] },
+    "monitor-dell": { "query": ["Dell P2419H", "Dell monitor"] },
+    "mini-refri": { "query": ["mini fridge", "compact refrigerator"] },
+    "raspberry-pi": { "query": ["Raspberry Pi 4 Model B", "Raspberry Pi 4"] },
+    "arduino": { "query": ["Arduino Uno", "Arduino Uno board"] },
+    "protoboard": { "query": ["breadboard electronics", "solderless breadboard"] },
+    "libro-ingles": { "query": ["English textbook", "English language textbook"] },
+    "ventilador": { "query": ["desk fan", "electric fan"] }
+  }
+}

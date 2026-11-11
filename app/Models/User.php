@@ -65,6 +65,20 @@ class User extends Authenticatable
         return 'username';
     }
 
+    /**
+     * /users/{user} se resuelve por username; si no hay coincidencia y el valor es numérico,
+     * por id (el chat abre conversaciones nuevas con el id del vendedor).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $user = parent::resolveRouteBinding($value, $field);
+        if ($user || $field !== null || ! ctype_digit((string) $value)) {
+            return $user;
+        }
+
+        return static::whereKey((int) $value)->first();
+    }
+
     public function posts()
     {
         return $this->hasMany(Post::class);

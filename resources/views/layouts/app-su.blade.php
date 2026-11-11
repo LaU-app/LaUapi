@@ -327,6 +327,24 @@
                     <i class="fas fa-users w-6"></i> <span>Usuarios</span>
                 </a>
 
+                <p class="px-4 text-xs font-semibold text-indigo-400 uppercase mt-4">Marketplace</p>
+                <a href="{{ route('su.comercios') }}"
+                    class="flex items-center px-4 py-2 rounded-lg
+                 @if (Route::is('su.comercios*')) bg-indigo-800 text-white @else text-indigo-100 hover:bg-indigo-800 hover:text-white transition @endif
+                 ">
+                    <i class="fas fa-store w-6"></i> <span>Comercios</span>
+                    @php($pendingMerchants = \App\Models\StoreVerification::where('status', 'submitted')->count())
+                    @if ($pendingMerchants > 0)
+                        <span class="ml-auto bg-amber-400 text-indigo-950 text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingMerchants }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('su.decisiones') }}"
+                    class="flex items-center px-4 py-2 rounded-lg
+                 @if (Route::is('su.decisiones')) bg-indigo-800 text-white @else text-indigo-100 hover:bg-indigo-800 hover:text-white transition @endif
+                 ">
+                    <i class="fas fa-wand-magic-sparkles w-6"></i> <span>Compra inteligente</span>
+                </a>
+
                 <p class="px-4 text-xs font-semibold text-indigo-400 uppercase mt-4">Gestión</p>
                 <a href="{{ route('su.reportes') }}"
                     class="flex items-center px-4 py-2 rounded-lg 

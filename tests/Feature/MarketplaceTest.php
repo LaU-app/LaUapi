@@ -27,7 +27,12 @@ class MarketplaceTest extends TestCase
 
     private function user(string $name): User
     {
-        return User::create(['name' => $name, 'username' => $name, 'email' => $name.'@example.test', 'password' => 'testing-password']);
+        // Todo se entrega dentro de un campus: cada estudiante tiene su universidad.
+        $campus = \App\Models\Universidad::firstOrCreate(['nombre' => 'Universidad de Prueba']);
+        $user = User::create(['name' => $name, 'username' => $name, 'email' => $name.'@example.test', 'password' => 'testing-password']);
+        $user->forceFill(['universidad_id' => $campus->id])->save();
+
+        return $user;
     }
 
     private function product(User $seller, array $overrides = []): Product

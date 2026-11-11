@@ -12,6 +12,8 @@ export default defineConfig({
                 'resources/css/responsive.css',
                 'resources/js/app.js',
                 'resources/js/script.js',
+                // Lo carga el layout del panel (layouts/app-su); sin él, un build limpio rompe el panel.
+                'resources/js/script-lau.js',
                 'resources/js/jquery-3.6.0.min.js',
             ],
             refresh: true,

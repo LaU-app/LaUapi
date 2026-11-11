@@ -16,6 +16,11 @@ use App\Http\Controllers\Api\AppUpdateController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\Marketplace\OrderController;
+use App\Http\Controllers\Api\Marketplace\MerchantVerificationController;
+use App\Http\Controllers\Api\Marketplace\PayPalCheckoutController;
+use App\Http\Controllers\Api\Marketplace\ProductVideosController;
+use App\Http\Controllers\Api\Marketplace\SmartShoppingController;
+use App\Http\Controllers\Api\Marketplace\VerifiedStoreController;
 use App\Http\Controllers\Api\Marketplace\ProductCategoryController;
 use App\Http\Controllers\Api\Marketplace\ProductController;
 use App\Http\Controllers\Api\Marketplace\ProductImageController;
@@ -60,6 +65,45 @@ Route::prefix('marketplace')->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product');
     Route::get('/stores/{store:slug}', [StoreController::class, 'show']);
+    Route::get('/verified-stores', [VerifiedStoreController::class, 'index']);
+});
+
+// Inicio de sesión con Google (web): el código se canjea aquí para no exponer el client secret.
+Route::post('/auth/oauth/google/token', \App\Http\Controllers\Api\GoogleOAuthController::class)->middleware('throttle:10,1');
+
+// Panel del equipo de LaU dentro de la app: revisión de comercios verificados.
+// Tokens propios del superusuario, aislados de los de estudiantes (ver AppServiceProvider).
+Route::prefix('lau-admin')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'login'])->middleware('throttle:5,1');
+
+    Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureLauAdmin::class, 'throttle:60,1'])->group(function () {
+        Route::get('/me', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'me']);
+        Route::post('/logout', [\App\Http\Controllers\Api\Admin\AdminAuthController::class, 'logout']);
+
+        Route::controller(\App\Http\Controllers\Api\Admin\MerchantReviewController::class)->prefix('merchants')->group(function () {
+            Route::get('/', 'index');
+            Route::get('/{verification}', 'show')->whereNumber('verification');
+            Route::post('/{verification}/approve', 'approve')->whereNumber('verification');
+            Route::post('/{verification}/reject', 'reject')->whereNumber('verification');
+            Route::post('/{verification}/suspend', 'suspend')->whereNumber('verification');
+            Route::post('/{verification}/paypal', 'refreshPayPal')->whereNumber('verification');
+            Route::get('/{verification}/document', 'document')->whereNumber('verification');
+            Route::get('/{verification}/documents/{kind}', 'document')->whereNumber('verification')
+                ->whereIn('kind', array_keys(\App\Models\StoreVerification::DOCUMENTS));
+            Route::post('/gateways/{gateway}/approve', 'approveGateway')->whereNumber('gateway');
+            Route::post('/gateways/{gateway}/reject', 'rejectGateway')->whereNumber('gateway');
+        });
+
+        // Campus (ubicación y área de entrega) y ferias con anuncio por campus.
+        Route::controller(\App\Http\Controllers\Api\Admin\CampusAdminController::class)->group(function () {
+            Route::get('/universidades', 'campuses');
+            Route::put('/universidades/{universidad}/ubicacion', 'updateLocation')->whereNumber('universidad');
+            Route::get('/ferias', 'ferias');
+            Route::post('/ferias', 'storeFeria');
+            Route::put('/ferias/{feria}', 'updateFeria')->whereNumber('feria');
+            Route::delete('/ferias/{feria}', 'destroyFeria')->whereNumber('feria');
+        });
+    });
 });
 
 // Búsqueda de música iTunes (público)
@@ -110,6 +154,41 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my/sales', [OrderController::class, 'sales']);
         Route::get('/my/store', [StoreController::class, 'mine']);
         Route::get('/my/dashboard', [StoreController::class, 'dashboard']);
+
+        // Comercios verificados: solicitud legal y conexión con PayPal.
+        Route::get('/my/verification', [MerchantVerificationController::class, 'show']);
+        Route::post('/my/verification', [MerchantVerificationController::class, 'submit'])->middleware('throttle:6,1');
+        // Pasarelas de pago: aparte de la verificación y opcionales (PayPal hoy, otras a futuro).
+        Route::post('/my/payment-gateways', [MerchantVerificationController::class, 'requestGateway'])->middleware('throttle:6,1');
+        Route::post('/my/paypal/connect', [MerchantVerificationController::class, 'connect'])->middleware('throttle:10,1');
+        Route::post('/my/paypal/refresh', [MerchantVerificationController::class, 'refresh'])->middleware('throttle:20,1');
+
+        // Pago con PayPal de productos de comercios verificados.
+        Route::prefix('paypal')->middleware('throttle:30,1')->group(function () {
+            Route::post('/quote', [PayPalCheckoutController::class, 'quote']);
+            Route::post('/orders', [PayPalCheckoutController::class, 'store']);
+            Route::post('/orders/{paypalOrderId}/capture', [PayPalCheckoutController::class, 'capture'])
+                ->where('paypalOrderId', '[A-Z0-9]{8,64}');
+        });
+
+        // Búsqueda inteligente con Jev (TypeSafe AI) y videos de reseñas filtrados por Jev.
+        Route::post('/smart-shopping', SmartShoppingController::class)->middleware('throttle:12,1');
+        Route::get('/products/{product}/videos', ProductVideosController::class)->whereNumber('product')->middleware('throttle:20,1');
+
+        // Campus en el mapa (entregas solo dentro de un campus), ferias y el producto en la web por su foto.
+        Route::get('/campus-map', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'map']);
+        Route::get('/ferias', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'ferias']);
+        Route::get('/products/{product}/web-links', [\App\Http\Controllers\Api\Marketplace\CampusController::class, 'webLinks'])
+            ->whereNumber('product')->middleware('throttle:20,1');
+
+        // Agente de compras (chat con historial): modelo de lenguaje abierto + juicios de Jev.
+        Route::controller(\App\Http\Controllers\Api\Marketplace\AgentConversationController::class)->prefix('agent/conversations')->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store')->middleware('throttle:10,1');
+            Route::get('/{conversation}', 'show')->whereNumber('conversation');
+            Route::post('/{conversation}/messages', 'message')->whereNumber('conversation')->middleware('throttle:12,1');
+            Route::delete('/{conversation}', 'destroy')->whereNumber('conversation');
+        });
     });
 
     // Autenticación

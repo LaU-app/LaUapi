@@ -1,5 +1,11 @@
 # LaUapi
 
+> **PayPal + AI hackathon:** this API powers LaU Marketplace. Verified merchants onboard with PayPal Partner Referrals, and students pay with PayPal Orders v2. The AI search uses Jev (TypeSafe AI) for typed decisions over real products. The shopping agent is an open-weight LLM with tools, and Jev gates and fact-checks each of its replies.
+> - **Judges' guide (English): [`HACKATHON.md`](HACKATHON.md)**. The frontend lives at https://github.com/LaU-app/LaU.
+> - Technical overview (Spanish, with diagrams and setup): [`docs/paypal-marketplace.md`](docs/paypal-marketplace.md)
+> - Quick start: `composer install && npm ci && npm run build`, copy `.env.example` to `.env`, set the `PAYPAL_*` and `TYPESAFE_API_KEY` variables, then run `php artisan migrate`, `php artisan db:seed --class=MarketplaceShowcaseSeeder`, `php artisan marketplace:demo-accounts` and `php artisan serve`.
+> - License: [MIT](LICENSE)
+
 API REST de la plataforma académica/social universitaria. Este repositorio se
 utiliza principalmente como **backend de API** para clientes móviles y
 asíncronos (autenticados con Laravel Sanctum), e incluye además un panel web de

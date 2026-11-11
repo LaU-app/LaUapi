@@ -341,6 +341,18 @@ Route::middleware(['auth:super'])
 
         Route::post('/ads/{id}/reset-views', [SUController::class, 'resetViews'])->name('ads.resetviews');
 
+        // LaU Marketplace: comercios verificados (PayPal) y compra inteligente (Jev)
+        Route::controller(\App\Http\Controllers\Admin\MerchantAdminController::class)->group(function () {
+            Route::get('/comercios', 'index')->name('comercios');
+            Route::get('/comercios/{verification}', 'show')->name('comercios.show')->whereNumber('verification');
+            Route::post('/comercios/{verification}/aprobar', 'approve')->name('comercios.approve')->whereNumber('verification');
+            Route::post('/comercios/{verification}/rechazar', 'reject')->name('comercios.reject')->whereNumber('verification');
+            Route::post('/comercios/{verification}/suspender', 'suspend')->name('comercios.suspend')->whereNumber('verification');
+            Route::get('/comercios/{verification}/documento', 'document')->name('comercios.document')->whereNumber('verification');
+            Route::post('/comercios/{verification}/paypal', 'refreshPayPal')->name('comercios.paypal')->whereNumber('verification');
+            Route::get('/compra-inteligente', 'decisions')->name('decisiones');
+        });
+
         // Gestion de actualización app
         Route::get('/updates', [SUController::class, 'updateindex'])->name('updates.index');
         Route::post('/updates', [SUController::class, 'storeup'])->name('updates.store');

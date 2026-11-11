@@ -24,8 +24,10 @@ class BannerController extends Controller
 
         // 3. Tu consulta real (la que falla)
         $banner = Banner::active()
+            // Anuncios para todos, o solo para los estudiantes de un campus (p. ej. una feria).
+            ->where(fn ($q) => $q->whereNull('universidad_id')->orWhere('universidad_id', $user->universidad_id))
             ->whereDoesntHave('viewedByUsers', function ($query) use ($user) {
-                $query->where('banner_user_views.user_id', $user->id); 
+                $query->where('banner_user_views.user_id', $user->id);
             })
             ->first();
 

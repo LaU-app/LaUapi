@@ -11,9 +11,11 @@ class Order extends Model
         'uuid_cliente', 'code', 'buyer_id', 'seller_id', 'store_id', 'total', 'status',
         'meeting_point', 'meeting_at', 'note', 'cancelled_by', 'cancel_reason',
         'delivered_at', 'cancelled_at',
+        'payment_method', 'payment_status', 'paypal_order_id', 'paypal_capture_id', 'paid_at',
     ];
 
     protected $casts = [
+        'paid_at' => 'datetime',
         'total' => 'decimal:2',
         'meeting_at' => 'datetime',
         'delivered_at' => 'datetime',
