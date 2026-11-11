@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Store;
+use App\Models\StorePaymentGateway;
 use App\Models\StoreVerification;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -56,6 +57,12 @@ class MarketplaceShowcaseSeeder extends Seeder
                 'offer_description' => 'Calculadoras científicas y graficadoras, cuadernos, kits de dibujo técnico, batas de laboratorio y guías de estudio para las principales universidades de San Salvador.',
             ],
             'approved',
+        );
+
+        // PayPal es una solicitud aparte de la verificación: la papelería la tiene aprobada.
+        StorePaymentGateway::firstOrCreate(
+            ['store_id' => $papeleria->id, 'gateway' => StorePaymentGateway::PAYPAL],
+            ['status' => 'approved', 'requested_at' => now()->subDays(4), 'reviewed_at' => now()->subDays(3), 'reviewed_by' => 'Equipo LaU'],
         );
 
         $products = [
@@ -129,6 +136,17 @@ class MarketplaceShowcaseSeeder extends Seeder
             'reviewed_at' => $status === 'approved' ? now()->subDays(4) : null,
             'reviewed_by' => $status === 'approved' ? 'Equipo LaU' : null,
             'review_notes' => $status === 'approved' ? 'NIT, NRC y escritura verificados.' : null,
+        ]);
+        // Documentos de vitrina (el panel los muestra como enviados; no hay archivos reales).
+        $slug = $model->slug;
+        $record->forceFill([
+            'country' => 'SV',
+            'document_path' => $record->document_path ?: "verificaciones-comercios/demo-{$slug}-fiscal.pdf",
+            'document_original_name' => $record->document_original_name ?: 'tarjeta-nit-nrc.pdf',
+            'registration_document_path' => $record->registration_document_path ?: "verificaciones-comercios/demo-{$slug}-matricula.pdf",
+            'registration_document_name' => $record->registration_document_name ?: 'matricula-de-comercio.pdf',
+            'id_document_path' => $record->id_document_path ?: "verificaciones-comercios/demo-{$slug}-dui.pdf",
+            'id_document_name' => $record->id_document_name ?: 'dui-representante.pdf',
         ]);
         $record->store()->associate($model);
         $record->save();

@@ -22,37 +22,55 @@ class PayPalCheckoutController extends MarketplaceController
     /** Resumen que el estudiante confirma: comercio, producto, precio, cantidad y total. */
     public function quote(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'product_id' => 'required|integer',
-            'quantity' => 'nullable|integer|min:1|max:'.PayPalCheckoutService::MAX_QUANTITY,
-        ]);
+        $request->validate($this->lineRules());
 
         return $this->guard('quote', fn () => $this->respond(
-            $this->checkout->quote($request->user(), $this->product($data['product_id']), (int) ($data['quantity'] ?? 1))
+            $this->checkout->quoteLines($request->user(), $this->lines($request))
         ));
     }
 
     public function store(Request $request): JsonResponse
     {
-        // Solo producto, cantidad y el identificador del intento: precio y total los fija el servidor.
-        $data = $request->validate([
-            'product_id' => 'required|integer',
-            'quantity' => 'nullable|integer|min:1|max:'.PayPalCheckoutService::MAX_QUANTITY,
+        // Solo productos, cantidades y el identificador del intento: precio y total los fija el servidor.
+        $data = $request->validate($this->lineRules() + [
             'checkout_attempt_id' => 'required|uuid',
             'assistant_decision_id' => 'nullable|integer',
         ]);
 
         return $this->guard('create', fn () => $this->respond(
-            $this->checkout->createOrder(
+            $this->checkout->createOrderLines(
                 $request->user(),
-                $this->product($data['product_id']),
-                (int) ($data['quantity'] ?? 1),
+                $this->lines($request),
                 $data['checkout_attempt_id'],
                 $data['assistant_decision_id'] ?? null,
             ),
             'Orden creada.',
             201,
         ));
+    }
+
+    /** Un producto (product_id + quantity) o el carrito de un comercio (items[]). */
+    private function lineRules(): array
+    {
+        $quantity = 'integer|min:1|max:'.PayPalCheckoutService::MAX_QUANTITY;
+
+        return [
+            'product_id' => 'required_without:items|integer',
+            'quantity' => 'nullable|'.$quantity,
+            'items' => 'nullable|array|min:1|max:'.PayPalCheckoutService::MAX_LINES,
+            'items.*.product_id' => 'required|integer|distinct',
+            'items.*.quantity' => 'required|'.$quantity,
+        ];
+    }
+
+    /** @return list<array{0: Product, 1: int}> */
+    private function lines(Request $request): array
+    {
+        $raw = $request->filled('items')
+            ? $request->input('items')
+            : [['product_id' => $request->input('product_id'), 'quantity' => $request->input('quantity', 1)]];
+
+        return array_map(fn ($line) => [$this->product((int) $line['product_id']), (int) $line['quantity']], array_values($raw));
     }
 
     public function capture(Request $request, string $paypalOrderId): JsonResponse

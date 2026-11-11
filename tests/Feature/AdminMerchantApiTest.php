@@ -135,6 +135,42 @@ class AdminMerchantApiTest extends TestCase
         Mail::assertSent(MerchantApprovedMail::class, fn ($mail) => $mail->hasTo('ventas@papeleriacampus.test'));
     }
 
+    public function test_payment_gateways_are_reviewed_apart_from_the_verification(): void
+    {
+        Mail::fake();
+        $token = $this->adminToken();
+        $paypal = $this->store->paymentGateways()->create(['gateway' => 'paypal', 'status' => 'requested', 'requested_at' => now()]);
+        $this->store->paymentGateways()->create(['gateway' => 'otra', 'gateway_name' => 'La de mi banco', 'status' => 'requested', 'requested_at' => now()]);
+
+        $this->as($token)->getJson('/api/lau-admin/merchants?estado=pagos')->assertOk()
+            ->assertJsonPath('data.counts.pagos', 1)
+            ->assertJsonPath('data.items.0.pending_gateways', 2);
+
+        // PayPal solo se aprueba para negocios ya verificados.
+        $this->as($token)->postJson('/api/lau-admin/merchants/gateways/'.$paypal->id.'/approve')->assertUnprocessable();
+
+        $this->as($token)->postJson('/api/lau-admin/merchants/'.$this->verification->id.'/approve')->assertOk();
+        $this->as($token)->postJson('/api/lau-admin/merchants/gateways/'.$paypal->id.'/approve')->assertOk()
+            ->assertJsonPath('data.gateways.1.label', 'PayPal')
+            ->assertJsonPath('data.gateways.1.status', 'approved')
+            ->assertJsonPath('data.gateways.0.label', 'La de mi banco');
+        $this->assertSame('Revisora LaU <revisora@lau.test>', $paypal->fresh()->reviewed_by);
+    }
+
+    public function test_each_legal_document_downloads_by_kind(): void
+    {
+        Storage::disk('local')->put('verificaciones-comercios/dui.jpg', 'jpg');
+        $this->verification->forceFill(['id_document_path' => 'verificaciones-comercios/dui.jpg', 'id_document_name' => 'dui.jpg'])->save();
+        $token = $this->adminToken();
+
+        $this->as($token)->getJson('/api/lau-admin/merchants/'.$this->verification->id)->assertOk()
+            ->assertJsonPath('data.documents.0.sent', true)
+            ->assertJsonPath('data.documents.1.sent', false)
+            ->assertJsonPath('data.documents.2.sent', true);
+        $this->as($token)->get('/api/lau-admin/merchants/'.$this->verification->id.'/documents/id_document')->assertOk()->assertDownload('dui.jpg');
+        $this->as($token)->getJson('/api/lau-admin/merchants/'.$this->verification->id.'/documents/registration_document')->assertNotFound();
+    }
+
     public function test_logout_revokes_the_token(): void
     {
         $token = $this->adminToken();

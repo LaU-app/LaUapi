@@ -5,14 +5,23 @@ comercios **verificados por LaU** vendan en el Marketplace y cobren con **PayPal
 permite que los estudiantes encuentren lo que necesitan con **Jev** (TypeSafe AI), un modelo de
 decisiones tipadas que evalúa productos reales.
 
+## Tres niveles de vendedor (separados y opcionales)
+
+| Nivel | Qué pide | Qué habilita |
+|---|---|---|
+| **Tienda (emprendimiento)** | Nombre, logo, categoría, redes. Sin papeles. | Vitrina propia; se vende con apartado (se paga al recibir). |
+| **Negocio verificado** | Datos legales + 3 documentos: registro fiscal (NIT/NRC en El Salvador, o el identificador fiscal de su país), matrícula de comercio/escritura/licencia y DUI o pasaporte del representante. | Distintivo "Verificado por LaU". |
+| **Pagos en línea** | Solicitud aparte (`store_payment_gateways`): PayPal se pide al registrarse o después; el equipo la aprueba por separado. "Otra" registra la pasarela que el negocio ya usa, para integrarla a futuro. | Botón de PayPal en el producto y en el carrito. |
+
 ## Flujo completo
 
 ```text
-Comercio                        LaU (panel /us/su/lau)            PayPal
-────────                        ──────────────────────            ──────
+Comercio                        LaU (panel /equipo)               PayPal
+────────                        ───────────────────               ──────
 1. Crea su tienda en la app
-2. Envía datos legales ───────► 3. Revisa NIT/NRC/documento
-   (NIT, NRC, documento)           Aprueba · pide cambios · suspende
+2. Envía datos legales ───────► 3. Revisa datos y 3 documentos
+   (+ "también quiero PayPal")     Aprueba · pide cambios · suspende
+                                3b. Aprueba la solicitud de PayPal (aparte)
 4. "Conectar con PayPal" ─────────────────────────────────────► Partner Referrals
                                                                  (action_url de un solo uso)
 5. Vuelve a la app ───────────► 6. Consulta estado del vendedor ◄─ merchant-integrations
@@ -35,22 +44,23 @@ E. Solo con la captura COMPLETED se crea el pedido pagado y se descuenta stock
 | Cliente HTTP (OAuth, Partner Referrals, estado del vendedor, Orders v2) | `app/Services/PayPal/PayPalClient.php` |
 | Evaluación del vendedor (fuente de verdad: PayPal) | `app/Services/PayPal/SellerStatus.php` |
 | Verificación y conexión del comercio | `app/Services/Marketplace/MerchantVerificationService.php` |
-| Checkout por producto | `app/Services/Marketplace/PayPalCheckoutService.php` |
-| API del comercio | `POST/GET /api/marketplace/my/verification`, `POST /api/marketplace/my/paypal/{connect,refresh}` |
+| Checkout por producto o carrito de un comercio (`items[]`, un pago por comercio) | `app/Services/Marketplace/PayPalCheckoutService.php` |
+| API del comercio | `POST/GET /api/marketplace/my/verification`, `POST /api/marketplace/my/payment-gateways`, `POST /api/marketplace/my/paypal/{connect,refresh}` |
+| Panel del equipo (pasarelas) | `POST /api/lau-admin/merchants/gateways/{id}/{approve,reject}`, documentos en `/api/lau-admin/merchants/{id}/documents/{tipo}` |
 | API de pago | `POST /api/marketplace/paypal/quote`, `POST /api/marketplace/paypal/orders`, `POST /api/marketplace/paypal/orders/{id}/capture` |
 | Directorio público | `GET /api/marketplace/verified-stores` |
 | Panel | `/us/su/lau/comercios`, `/us/su/lau/comercios/{id}` |
 
 Reglas de seguridad aplicadas:
 
-- **Precio y total.** Los define el backend en centavos enteros. El navegador solo envía `product_id`, `quantity` e `checkout_attempt_id`.
+- **Precio y total.** Los define el backend en centavos enteros. El navegador solo envía `product_id` y `quantity` (o `items[]` del mismo comercio) y `checkout_attempt_id`. Un pago nunca mezcla comercios.
 - **Comercio receptor.** Se confirma con PayPal antes de cotizar, crear y capturar. Además se compara con el `payee` de la orden.
 - **Validación de la orden.** Antes y después de capturar se valida la orden contra PayPal: comprador (`custom_id`), producto, comercio, monto y moneda.
 - **Idempotencia.** La creación usa `lau-mkt-create-u{usuario}-{uuid}` y la captura `lau-mkt-capture-{orderId}`.
 - **Captura duplicada.** Se bloquea de tres formas: un candado por orden, la consulta previa a PayPal (`COMPLETED` se rechaza) y un índice único en `orders.paypal_order_id`.
 - **Captura pendiente.** Una captura `PENDING` no se informa como pagada (HTTP 202, `success:false`).
 - **Errores de PayPal.** Llegan sanitizados: estado, nombre, códigos de *issue* y `debug_id`. Nunca incluyen tokens, credenciales ni cuerpos completos.
-- **Documento legal.** Se guarda fuera de `public/` y solo lo descarga el panel.
+- **Documentos legales.** Se guardan fuera de `public/` y solo los descarga el panel.
 
 ## Jev (TypeSafe AI)
 

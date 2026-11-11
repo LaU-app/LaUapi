@@ -88,6 +88,10 @@ Route::prefix('lau-admin')->group(function () {
             Route::post('/{verification}/suspend', 'suspend')->whereNumber('verification');
             Route::post('/{verification}/paypal', 'refreshPayPal')->whereNumber('verification');
             Route::get('/{verification}/document', 'document')->whereNumber('verification');
+            Route::get('/{verification}/documents/{kind}', 'document')->whereNumber('verification')
+                ->whereIn('kind', array_keys(\App\Models\StoreVerification::DOCUMENTS));
+            Route::post('/gateways/{gateway}/approve', 'approveGateway')->whereNumber('gateway');
+            Route::post('/gateways/{gateway}/reject', 'rejectGateway')->whereNumber('gateway');
         });
 
         // Campus (ubicación y área de entrega) y ferias con anuncio por campus.
@@ -154,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Comercios verificados: solicitud legal y conexión con PayPal.
         Route::get('/my/verification', [MerchantVerificationController::class, 'show']);
         Route::post('/my/verification', [MerchantVerificationController::class, 'submit'])->middleware('throttle:6,1');
+        // Pasarelas de pago: aparte de la verificación y opcionales (PayPal hoy, otras a futuro).
+        Route::post('/my/payment-gateways', [MerchantVerificationController::class, 'requestGateway'])->middleware('throttle:6,1');
         Route::post('/my/paypal/connect', [MerchantVerificationController::class, 'connect'])->middleware('throttle:10,1');
         Route::post('/my/paypal/refresh', [MerchantVerificationController::class, 'refresh'])->middleware('throttle:20,1');
 

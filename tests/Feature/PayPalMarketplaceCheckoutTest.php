@@ -181,6 +181,61 @@ class PayPalMarketplaceCheckoutTest extends TestCase
             && $r->hasHeader('PayPal-Request-Id', 'lau-mkt-capture-'.self::ORDER));
     }
 
+    // ---------- Carrito: varios productos del mismo comercio en un solo pago ----------
+
+    public function test_cart_of_one_store_is_quoted_created_and_captured_as_one_paid_order(): void
+    {
+        $cuaderno = $this->productFor($this->store, ['price' => '3.25', 'stock' => 10]);
+        $items = [['product_id' => $this->product->id, 'quantity' => 2], ['product_id' => $cuaderno->id, 'quantity' => 3]];
+        $customId = 'lau|u'.$this->buyer->id.'|'.$this->product->id.'x2,'.$cuaderno->id.'x3';
+        $unit = [
+            'reference_id' => 'LAU-S'.$this->store->id,
+            'custom_id' => $customId,
+            'amount' => ['currency_code' => 'USD', 'value' => '46.75'],
+            'payee' => ['merchant_id' => self::MERCHANT],
+        ];
+        $paypalOrder = fn (string $status) => ['id' => self::ORDER, 'status' => $status, 'purchase_units' => [$status === 'COMPLETED'
+            ? $unit + ['payments' => ['captures' => [['id' => self::CAPTURE, 'status' => 'COMPLETED', 'amount' => ['currency_code' => 'USD', 'value' => '46.75']]]]]
+            : $unit]];
+
+        Http::fake($this->paypalSellerFakes() + [
+            self::CAPTURE_URL => Http::response($paypalOrder('COMPLETED'), 201),
+            self::ORDER_URL => Http::response($paypalOrder('APPROVED')),
+            self::ORDERS_URL => Http::response($paypalOrder('CREATED'), 201),
+        ]);
+
+        $this->postJson('/api/marketplace/paypal/quote', ['items' => $items])->assertOk()
+            ->assertJsonPath('data.total', '46.75')
+            ->assertJsonCount(2, 'data.items')
+            ->assertJsonPath('data.items.1.subtotal', '9.75');
+
+        $this->postJson('/api/marketplace/paypal/orders', ['items' => $items, 'checkout_attempt_id' => self::ATTEMPT])
+            ->assertCreated()->assertJsonPath('data.total', '46.75');
+        Http::assertSent(fn (Request $r) => $r->url() === self::ORDERS_URL
+            && $r['purchase_units'][0]['custom_id'] === $customId
+            && count($r['purchase_units'][0]['items']) === 2
+            && $r['purchase_units'][0]['items'][1]['quantity'] === '3');
+
+        $this->postJson('/api/marketplace/paypal/orders/'.self::ORDER.'/capture')->assertOk()->assertJsonPath('data.amount', '46.75');
+
+        $order = Order::where('paypal_order_id', self::ORDER)->with('items')->firstOrFail();
+        $this->assertSame('46.75', $order->total);
+        $this->assertCount(2, $order->items);
+        $this->assertSame(3, $this->product->fresh()->stock);
+        $this->assertSame(7, $cuaderno->fresh()->stock);
+    }
+
+    public function test_one_paypal_payment_cannot_mix_stores(): void
+    {
+        Http::fake($this->paypalSellerFakes());
+        $other = $this->verifiedStore(['slug' => 'otra-tienda', 'name' => 'Otra tienda', 'paypal_tracking_id' => 'lau-store-otra']);
+        $foreign = $this->productFor($other);
+
+        $this->postJson('/api/marketplace/paypal/quote', ['items' => [
+            ['product_id' => $this->product->id, 'quantity' => 1], ['product_id' => $foreign->id, 'quantity' => 1],
+        ]])->assertUnprocessable()->assertJsonPath('code', 'mixed_stores');
+    }
+
     public function test_paid_orders_cannot_be_cancelled_like_reservations(): void
     {
         Http::fake($this->paypalSellerFakes() + [

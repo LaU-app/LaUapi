@@ -58,8 +58,17 @@ class MerchantVerificationTest extends TestCase
             'website' => 'https://papeleriacampus.test',
             'offer_description' => 'Calculadoras científicas, cuadernos, kits de dibujo técnico y material de laboratorio para estudiantes.',
             'accepts_terms' => '1',
-            'document' => UploadedFile::fake()->create('escritura.pdf', 200, 'application/pdf'),
+            'document' => UploadedFile::fake()->create('tarjeta-nit.pdf', 200, 'application/pdf'),
+            'registration_document' => UploadedFile::fake()->create('escritura.pdf', 200, 'application/pdf'),
+            'id_document' => UploadedFile::fake()->create('dui.jpg', 120, 'image/jpeg'),
         ], $overrides);
+    }
+
+    /** El equipo aprueba la solicitud de PayPal desde el panel de la app. */
+    private function approvePayPalRequest(): void
+    {
+        $gateway = \App\Models\StorePaymentGateway::where('store_id', $this->store->id)->where('gateway', 'paypal')->sole();
+        app(\App\Services\Marketplace\MerchantVerificationService::class)->reviewGateway($gateway, true, 'Revisora LaU <revisora@lau.test>');
     }
 
     private function admin(): su_ad
@@ -79,24 +88,89 @@ class MerchantVerificationTest extends TestCase
             ->assertJsonPath('data.verification.has_document', true)
             ->assertJsonMissingPath('data.verification.document_path');
 
+        $response->assertJsonPath('data.verification.documents.1.sent', true)
+            ->assertJsonPath('data.verification.documents.2.sent', true)
+            ->assertJsonMissingPath('data.verification.id_document_path')
+            ->assertJsonPath('data.gateways', []);
+
         $verification = StoreVerification::firstOrFail();
-        Storage::disk('local')->assertExists($verification->document_path);
-        $this->assertStringNotContainsString('public', $verification->document_path);
+        foreach (['document_path', 'registration_document_path', 'id_document_path'] as $column) {
+            Storage::disk('local')->assertExists($verification->{$column});
+            $this->assertStringNotContainsString('public', $verification->{$column});
+        }
     }
 
-    public function test_application_validates_salvadoran_identifiers_and_document(): void
+    public function test_application_validates_salvadoran_identifiers_and_every_document(): void
     {
         $this->post('/api/marketplace/my/verification', $this->application([
-            'nit' => '123', 'nrc' => '', 'document' => null, 'accepts_terms' => null,
+            'nit' => '123', 'nrc' => '', 'document' => null, 'registration_document' => null, 'id_document' => null, 'accepts_terms' => null,
+            // El NRC ya no es opcional para personas naturales en El Salvador.
+            'business_type' => 'persona_natural',
         ]), ['Accept' => 'application/json'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['nit', 'nrc', 'document', 'accepts_terms']);
+            ->assertJsonValidationErrors(['nit', 'nrc', 'document', 'registration_document', 'id_document', 'accepts_terms']);
+    }
+
+    public function test_businesses_outside_el_salvador_use_their_own_tax_id(): void
+    {
+        $this->post('/api/marketplace/my/verification', $this->application([
+            'country' => 'GT', 'nit' => '1234567-8', 'nrc' => '',
+        ]), ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.verification.country', 'GT')
+            ->assertJsonPath('data.verification.country_label', 'Guatemala');
+    }
+
+    public function test_a_student_venture_cannot_ask_for_payment_gateways(): void
+    {
+        // Emprendimiento sin verificación: vende con apartado, sin pasarelas.
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'paypal'])
+            ->assertUnprocessable()->assertJsonValidationErrors('gateway');
+    }
+
+    public function test_paypal_is_an_optional_separate_request(): void
+    {
+        $this->post('/api/marketplace/my/verification', $this->application(), ['Accept' => 'application/json'])->assertCreated()
+            ->assertJsonPath('data.gateways', []);
+
+        // Se puede pedir mientras LaU revisa los papeles; repetirlo no duplica la solicitud.
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'paypal'])->assertCreated()
+            ->assertJsonPath('data.gateways.0.gateway', 'paypal')
+            ->assertJsonPath('data.gateways.0.status', 'requested');
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'paypal'])->assertCreated();
+
+        // Una pasarela que LaU todavía no integra se pide con su nombre.
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'otra'])
+            ->assertUnprocessable()->assertJsonValidationErrors('gateway_name');
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'otra', 'gateway_name' => 'La de mi banco', 'note' => 'La usamos desde 2019.'])
+            ->assertCreated();
+
+        $this->assertSame(1, \App\Models\StorePaymentGateway::where('gateway', 'paypal')->count());
+        $this->assertSame(2, \App\Models\StorePaymentGateway::count());
+    }
+
+    public function test_paypal_can_be_requested_with_the_application(): void
+    {
+        $this->post('/api/marketplace/my/verification', $this->application(['request_paypal' => '1']), ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.gateways.0.gateway', 'paypal')
+            ->assertJsonPath('data.gateways.0.status', 'requested');
     }
 
     public function test_cannot_connect_paypal_before_lau_approves(): void
     {
         Http::fake();
+        $this->post('/api/marketplace/my/verification', $this->application(['request_paypal' => '1']), ['Accept' => 'application/json'])->assertCreated();
+
+        $this->postJson('/api/marketplace/my/paypal/connect')->assertUnprocessable();
+        Http::assertNothingSent();
+    }
+
+    public function test_a_verified_business_without_an_approved_paypal_request_cannot_connect(): void
+    {
+        Http::fake();
         $this->post('/api/marketplace/my/verification', $this->application(), ['Accept' => 'application/json'])->assertCreated();
+        $this->store->forceFill(['verification_status' => 'approved'])->save();
 
         $this->postJson('/api/marketplace/my/paypal/connect')->assertUnprocessable();
         Http::assertNothingSent();
@@ -117,6 +191,11 @@ class MerchantVerificationTest extends TestCase
 
         $this->assertSame('approved', $this->store->fresh()->verification_status);
         $this->assertSame('Revisora LaU <revisora@lau.test>', $verification->fresh()->reviewed_by);
+
+        // Aparte: el negocio pide PayPal y el equipo lo aprueba.
+        Sanctum::actingAs($this->owner);
+        $this->postJson('/api/marketplace/my/payment-gateways', ['gateway' => 'paypal'])->assertCreated();
+        $this->approvePayPalRequest();
 
         // Comercio: conectar PayPal (Partner Referrals con return_url a la app).
         Http::fake([
@@ -174,7 +253,8 @@ class MerchantVerificationTest extends TestCase
                 && $mail->hasReplyTo('lauapp.es@gmail.com')
                 && str_contains($mail->envelope()->subject, 'Papelería Campus')
                 && str_contains($html, 'https://lauapp.es/tabs/marketplace/empresa')
-                && str_contains($html, 'Conectar PayPal');
+                && str_contains($html, 'Abrir mi panel')
+                && ! str_contains($html, 'Conectar PayPal');
         });
     }
 
@@ -205,15 +285,15 @@ class MerchantVerificationTest extends TestCase
             ->assertJsonPath('data.store.verification_status', 'rejected')
             ->assertJsonPath('data.verification.review_notes', 'El NIT no coincide con la escritura.');
 
-        // Reenvío sin volver a subir documento: se conserva el anterior.
-        $this->post('/api/marketplace/my/verification', $this->application(['document' => null]), ['Accept' => 'application/json'])
+        // Reenvío sin volver a subir documentos: se conservan los anteriores.
+        $this->post('/api/marketplace/my/verification', $this->application(['document' => null, 'registration_document' => null, 'id_document' => null]), ['Accept' => 'application/json'])
             ->assertCreated()->assertJsonPath('data.verification.status', 'submitted');
     }
 
     public function test_suspension_removes_the_badge_immediately(): void
     {
         $this->store->forceFill(['verification_status' => 'approved', 'paypal_status' => 'enabled', 'paypal_merchant_id' => self::MERCHANT, 'paypal_tracking_id' => self::TRACKING])->save();
-        $verification = new StoreVerification(array_merge(collect($this->application())->except(['document', 'accepts_terms'])->all(), ['status' => 'approved', 'document_path' => 'x.pdf']));
+        $verification = new StoreVerification(array_merge(collect($this->application())->except(['document', 'registration_document', 'id_document', 'accepts_terms'])->all(), ['status' => 'approved', 'document_path' => 'x.pdf']));
         $verification->store()->associate($this->store)->save();
 
         $this->actingAs($this->admin(), 'super')

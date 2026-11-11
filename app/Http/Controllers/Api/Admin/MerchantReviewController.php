@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\StorePaymentGateway;
 use App\Models\StoreVerification;
 use App\Services\Marketplace\MerchantVerificationService;
 use App\Services\PayPal\PayPalException;
@@ -27,8 +28,12 @@ class MerchantReviewController extends Controller
         $status = $request->query('estado');
         $search = trim((string) $request->query('q'));
 
+        $pendingGateway = fn ($q) => $q->whereHas('gateways', fn ($g) => $g->where('status', 'requested'));
+
         $page = StoreVerification::with('store:id,user_id,name,slug,logo,paypal_status,verification_status', 'store.user:id,name,username')
+            ->withCount(['gateways as pending_gateways' => fn ($q) => $q->where('status', 'requested')])
             ->when(array_key_exists((string) $status, StoreVerification::STATUS_LABELS), fn ($q) => $q->where('status', $status))
+            ->when($status === 'pagos', $pendingGateway)
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('legal_name', 'like', "%{$search}%")
                 ->orWhere('nit', 'like', "%{$search}%")
@@ -41,7 +46,8 @@ class MerchantReviewController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'items' => collect($page->items())->map(fn (StoreVerification $v) => $this->summary($v))->all(),
-            'counts' => collect(StoreVerification::STATUS_LABELS)->map(fn ($label, $key) => (int) ($counts[$key] ?? 0)),
+            'counts' => collect(StoreVerification::STATUS_LABELS)->map(fn ($label, $key) => (int) ($counts[$key] ?? 0))
+                ->put('pagos', StoreVerification::where($pendingGateway)->count()),
             'with_paypal' => StoreVerification::where('status', 'approved')
                 ->whereHas('store', fn ($q) => $q->where('paypal_status', 'enabled'))->count(),
             'page' => $page->currentPage(),
@@ -64,7 +70,7 @@ class MerchantReviewController extends Controller
             'success' => true,
             'emailed' => $emailed,
             'message' => $emailed
-                ? 'Comercio aprobado. Le enviamos un correo para que conecte PayPal.'
+                ? 'Negocio verificado. Le enviamos un correo con la noticia.'
                 : 'Comercio aprobado, pero no se pudo enviar el correo. Revisá la configuración de correo del servidor.',
             'data' => $this->detail($verification->fresh()),
         ]);
@@ -111,13 +117,43 @@ class MerchantReviewController extends Controller
         ]);
     }
 
-    /** Documento legal privado (nunca está en public/). */
-    public function document(StoreVerification $verification)
+    public function approveGateway(Request $request, StorePaymentGateway $gateway): JsonResponse
     {
-        $path = $verification->document_path;
+        $data = $request->validate(['notes' => 'nullable|string|max:1000']);
+        try {
+            $this->merchants->reviewGateway($gateway, true, $this->reviewer($request), $data['notes'] ?? null);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $gateway->gateway === StorePaymentGateway::PAYPAL
+                ? 'PayPal aprobado. El negocio ya puede conectar su cuenta.'
+                : 'Pedido de pasarela marcado como aprobado.',
+            'data' => $this->detail($gateway->store->verification),
+        ]);
+    }
+
+    public function rejectGateway(Request $request, StorePaymentGateway $gateway): JsonResponse
+    {
+        $data = $request->validate(['notes' => 'required|string|min:10|max:1000'], [
+            'notes.required' => 'Explicá al negocio por qué no se aprueba.',
+            'notes.min' => 'Explicá al negocio por qué no se aprueba (al menos 10 caracteres).',
+        ]);
+        $this->merchants->reviewGateway($gateway, false, $this->reviewer($request), $data['notes']);
+
+        return response()->json(['success' => true, 'message' => 'Pasarela no aprobada. El negocio verá tus observaciones.', 'data' => $this->detail($gateway->store->verification)]);
+    }
+
+    /** Documentos legales privados (nunca están en public/). */
+    public function document(StoreVerification $verification, string $kind = 'document')
+    {
+        [$pathColumn, $nameColumn] = StoreVerification::DOCUMENTS[$kind] ?? abort(404);
+        $path = $verification->getAttribute($pathColumn);
         abort_unless($path && Storage::disk(MerchantVerificationService::DOCUMENTS_DISK)->exists($path), 404);
 
-        $name = Str::slug(pathinfo($verification->document_original_name ?: 'documento', PATHINFO_FILENAME)) ?: 'documento';
+        $name = Str::slug(pathinfo($verification->getAttribute($nameColumn) ?: 'documento', PATHINFO_FILENAME)) ?: 'documento';
 
         return Storage::disk(MerchantVerificationService::DOCUMENTS_DISK)
             ->download($path, $name.'.'.pathinfo($path, PATHINFO_EXTENSION), ['Cache-Control' => 'no-store']);
@@ -132,6 +168,7 @@ class MerchantReviewController extends Controller
             'legal_name' => $v->legal_name,
             'nit' => $v->nit,
             'submitted_at' => $v->submitted_at?->toIso8601String(),
+            'pending_gateways' => (int) ($v->pending_gateways ?? $v->gateways()->where('status', 'requested')->count()),
             'store' => $v->store ? [
                 'name' => $v->store->name,
                 'slug' => $v->store->slug,
@@ -158,8 +195,22 @@ class MerchantReviewController extends Controller
             'address' => $v->address,
             'website' => $v->website,
             'offer_description' => $v->offer_description,
+            'country' => $v->country,
+            'country_label' => $v->country_label,
             'has_document' => $v->has_document,
             'document_name' => $v->document_original_name,
+            'documents' => $v->documents,
+            'gateways' => $store ? $store->paymentGateways()->get()->map(fn (StorePaymentGateway $g) => [
+                'id' => $g->id,
+                'gateway' => $g->gateway,
+                'label' => $g->label,
+                'status' => $g->status,
+                'status_label' => $g->status_label,
+                'note' => $g->note,
+                'requested_at' => $g->requested_at?->toIso8601String(),
+                'reviewed_by' => $g->reviewed_by,
+                'review_notes' => $g->review_notes,
+            ])->all() : [],
             'reviewed_at' => $v->reviewed_at?->toIso8601String(),
             'reviewed_by' => $v->reviewed_by,
             'review_notes' => $v->review_notes,

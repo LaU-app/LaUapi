@@ -16,7 +16,8 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Pago con PayPal (Orders v2, intent CAPTURE) de productos de comercios verificados.
+ * Pago con PayPal (Orders v2, intent CAPTURE) de productos de comercios verificados:
+ * un producto, o varios del mismo comercio (carrito). Un pago es siempre de un solo comercio.
  *
  * - Producto, precio, existencias y total los calcula el backend; el navegador solo envía
  *   qué producto y cuántas unidades.
@@ -33,31 +34,52 @@ class PayPalCheckoutService
 
     public function __construct(private readonly PayPalClient $paypal) {}
 
+    /** Máximo de productos distintos en un mismo pago (carrito de un comercio). */
+    public const MAX_LINES = 10;
+
     /**
      * Resumen que el estudiante confirma antes de pagar: comercio, producto, precio y total.
      *
-     * @return array{product: array, store: array, unit_price: string, quantity: int, total: string, currency: string, merchant_id: string}
+     * @return array{product: array, store: array, unit_price: string, quantity: int, total: string, currency: string, merchant_id: string, items: list<array>}
      */
     public function quote(User $buyer, Product $product, int $quantity): array
     {
-        $this->assertPurchasable($buyer, $product, $quantity);
-        $merchantId = $this->verifiedMerchantId($product->store);
+        return $this->quoteLines($buyer, [[$product, $quantity]]);
+    }
+
+    /**
+     * Resumen de varios productos de un mismo comercio (carrito). Un pago = un comercio.
+     *
+     * @param  list<array{0: Product, 1: int}>  $lines
+     */
+    public function quoteLines(User $buyer, array $lines): array
+    {
+        $lines = $this->assertLines($buyer, $lines);
+        [$first, $firstQuantity] = $lines[0];
+        $merchantId = $this->verifiedMerchantId($first->store);
+
+        $items = array_map(fn (array $line) => [
+            'product_id' => $line[0]->id,
+            'name' => $line[0]->name,
+            'image_url' => $line[0]->images()->first()?->url,
+            'unit_price' => self::money(self::cents($line[0]->price)),
+            'quantity' => $line[1],
+            'subtotal' => self::money(self::cents($line[0]->price) * $line[1]),
+        ], $lines);
 
         return [
-            'product' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'image_url' => $product->images()->first()?->url,
-            ],
+            // product / unit_price / quantity: el primer producto (pago de un solo producto).
+            'product' => ['id' => $first->id, 'name' => $first->name, 'image_url' => $items[0]['image_url']],
             'store' => [
-                'name' => $product->store->name,
-                'slug' => $product->store->slug,
-                'logo_url' => $product->store->logo_url,
+                'name' => $first->store->name,
+                'slug' => $first->store->slug,
+                'logo_url' => $first->store->logo_url,
                 'is_verified' => true,
             ],
-            'unit_price' => self::money(self::cents($product->price)),
-            'quantity' => $quantity,
-            'total' => self::money(self::cents($product->price) * $quantity),
+            'unit_price' => $items[0]['unit_price'],
+            'quantity' => $firstQuantity,
+            'items' => $items,
+            'total' => self::money(self::linesCents($lines)),
             'currency' => self::CURRENCY,
             // Público: el SDK de PayPal lo necesita para mostrar el botón del comercio correcto.
             'merchant_id' => $merchantId,
@@ -71,24 +93,32 @@ class PayPalCheckoutService
      */
     public function createOrder(User $buyer, Product $product, int $quantity, string $attemptId, ?int $decisionId = null): array
     {
-        $quote = $this->quote($buyer, $product, $quantity);
+        return $this->createOrderLines($buyer, [[$product, $quantity]], $attemptId, $decisionId);
+    }
+
+    /** @param  list<array{0: Product, 1: int}>  $lines */
+    public function createOrderLines(User $buyer, array $lines, string $attemptId, ?int $decisionId = null): array
+    {
+        $quote = $this->quoteLines($buyer, $lines);
+        $store = $lines[0][0]->store;
+        $refs = self::refs($lines);
         $money = fn (string $value) => ['currency_code' => self::CURRENCY, 'value' => $value];
 
         $order = $this->paypal->createOrder([
             'intent' => 'CAPTURE',
             'purchase_units' => [[
-                'reference_id' => self::reference($product->id),
-                'custom_id' => self::customId($buyer->id, $product->id, $quantity),
-                'description' => Str::limit('LaU Marketplace · '.$product->store->name, 127, ''),
+                'reference_id' => self::reference($refs, $store->id),
+                'custom_id' => self::customId($buyer->id, $refs),
+                'description' => Str::limit('LaU Marketplace · '.$store->name, 127, ''),
                 'amount' => $money($quote['total']) + ['breakdown' => ['item_total' => $money($quote['total'])]],
                 'payee' => ['merchant_id' => $quote['merchant_id']],
-                'items' => [[
-                    'name' => Str::limit($product->name, 127, ''),
-                    'sku' => self::reference($product->id),
-                    'quantity' => (string) $quantity,
-                    'unit_amount' => $money($quote['unit_price']),
+                'items' => array_map(fn (array $item) => [
+                    'name' => Str::limit($item['name'], 127, ''),
+                    'sku' => 'LAU-P'.$item['product_id'],
+                    'quantity' => (string) $item['quantity'],
+                    'unit_amount' => $money($item['unit_price']),
                     'category' => 'PHYSICAL_GOODS',
-                ]],
+                ], $quote['items']),
             ]],
             'application_context' => [
                 'brand_name' => 'LaU Marketplace',
@@ -102,7 +132,7 @@ class PayPalCheckoutService
             throw PayPalException::unexpected('Crear orden', 'sin ID de orden válido');
         }
 
-        $this->assertOrderMatches($order, $quote['merchant_id'], $buyer->id, $product->id, $quantity, $quote['total'], payeeRequired: false);
+        $this->assertOrderMatches($order, $quote['merchant_id'], $buyer->id, $refs, $store->id, $quote['total'], payeeRequired: false);
 
         $status = (string) ($order['status'] ?? '');
         if (! in_array($status, ['CREATED', 'PAYER_ACTION_REQUIRED'], true)) {
@@ -111,7 +141,7 @@ class PayPalCheckoutService
 
         if ($decisionId) {
             AssistantDecision::whereKey($decisionId)->where('user_id', $buyer->id)
-                ->update(['selected_product_id' => $product->id, 'paypal_order_id' => $orderId]);
+                ->update(['selected_product_id' => $lines[0][0]->id, 'paypal_order_id' => $orderId]);
         }
 
         return ['order_id' => $orderId, 'status' => $status, 'total' => $quote['total'], 'currency' => self::CURRENCY];
@@ -148,15 +178,24 @@ class PayPalCheckoutService
                 throw $e;
             }
 
-            [$productId, $quantity] = $this->purchaseFrom($order, $buyer->id);
-            $product = Product::withTrashed()->with('store')->find($productId);
-            if (! $product || ! $product->store) {
-                throw new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['producto o comercio inexistente']);
+            $refs = $this->purchaseFrom($order, $buyer->id);
+            $products = Product::withTrashed()->with('store')->whereKey(array_keys($refs))->get()->keyBy('id');
+            $lines = [];
+            foreach ($refs as $productId => $quantity) {
+                $product = $products->get($productId);
+                if (! $product || ! $product->store) {
+                    throw new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['producto o comercio inexistente']);
+                }
+                $lines[] = [$product, $quantity];
+            }
+            $store = $lines[0][0]->store;
+            if (collect($lines)->contains(fn ($line) => $line[0]->store_id !== $store->id)) {
+                throw new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['productos de varios comercios']);
             }
 
-            $merchantId = $this->verifiedMerchantId($product->store);
-            $total = self::money(self::cents($product->price) * $quantity);
-            $this->assertOrderMatches($order, $merchantId, $buyer->id, $productId, $quantity, $total);
+            $merchantId = $this->verifiedMerchantId($store);
+            $total = self::money(self::linesCents($lines));
+            $this->assertOrderMatches($order, $merchantId, $buyer->id, $refs, $store->id, $total);
 
             $status = (string) ($order['status'] ?? '');
             if ($status === 'COMPLETED') {
@@ -166,11 +205,17 @@ class PayPalCheckoutService
                 throw new CheckoutException('not_approved', 'El pago todavía no fue aprobado en PayPal.', 409, ["status={$status}"]);
             }
 
-            $result = DB::transaction(function () use ($buyer, $product, $quantity, $orderId, $merchantId, $total) {
+            $result = DB::transaction(function () use ($buyer, $lines, $refs, $store, $orderId, $merchantId, $total) {
                 // Existencias bloqueadas mientras PayPal captura: si no alcanza, no se cobra.
-                $locked = Product::whereKey($product->id)->lockForUpdate()->first();
-                if (! $locked || $locked->status !== 'active' || $locked->stock < $quantity) {
-                    throw new CheckoutException('out_of_stock', 'Ese producto se agotó antes de completar el pago. No se te cobró.', 409);
+                $locked = Product::whereKey(array_keys($refs))->lockForUpdate()->get()->keyBy('id');
+                foreach ($refs as $productId => $quantity) {
+                    $row = $locked->get($productId);
+                    if (! $row || $row->status !== 'active' || $row->stock < $quantity) {
+                        $message = count($refs) > 1
+                            ? ($row?->name ?? 'Un producto').' se agotó antes de completar el pago. No se te cobró.'
+                            : 'Ese producto se agotó antes de completar el pago. No se te cobró.';
+                        throw new CheckoutException('out_of_stock', $message, 409);
+                    }
                 }
 
                 try {
@@ -179,15 +224,15 @@ class PayPalCheckoutService
                     throw $this->captureError($e);
                 }
 
-                $this->assertOrderMatches($captured, $merchantId, $buyer->id, $product->id, $quantity, $total);
+                $this->assertOrderMatches($captured, $merchantId, $buyer->id, $refs, $store->id, $total);
                 $capture = $this->completedCapture($captured, $total);
 
                 $lauOrder = Order::create([
                     'uuid_cliente' => (string) Str::uuid(),
                     'code' => Order::generateCode(),
                     'buyer_id' => $buyer->id,
-                    'seller_id' => $product->user_id,
-                    'store_id' => $product->store_id,
+                    'seller_id' => $lines[0][0]->user_id,
+                    'store_id' => $store->id,
                     'total' => $total,
                     'status' => 'pending',
                     'payment_method' => 'paypal',
@@ -195,16 +240,18 @@ class PayPalCheckoutService
                     'paypal_order_id' => $orderId,
                     'paypal_capture_id' => $capture['id'],
                     'paid_at' => now(),
-                    'meeting_point' => $product->delivery_point,
+                    'meeting_point' => $lines[0][0]->delivery_point,
                 ]);
-                $lauOrder->items()->create([
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'unit_price' => $product->price,
-                    'quantity' => $quantity,
-                    'image_filename' => $product->images()->value('filename'),
-                ]);
-                Product::whereKey($product->id)->decrement('stock', $quantity);
+                foreach ($lines as [$product, $quantity]) {
+                    $lauOrder->items()->create([
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'unit_price' => $product->price,
+                        'quantity' => $quantity,
+                        'image_filename' => $product->images()->value('filename'),
+                    ]);
+                    Product::whereKey($product->id)->decrement('stock', $quantity);
+                }
 
                 AssistantDecision::where('paypal_order_id', $orderId)->where('user_id', $buyer->id)
                     ->update(['order_id' => $lauOrder->id]);
@@ -215,7 +262,7 @@ class PayPalCheckoutService
                     'status' => 'COMPLETED',
                     'amount' => $total,
                     'currency' => self::CURRENCY,
-                    'store' => $product->store->name,
+                    'store' => $store->name,
                     'order_code' => $lauOrder->code,
                     'lau_order_id' => $lauOrder->id,
                 ];
@@ -254,6 +301,36 @@ class PayPalCheckoutService
         return $status->merchantId;
     }
 
+    /**
+     * Valida cada línea y que todas sean del mismo comercio. Devuelve las líneas normalizadas.
+     *
+     * @param  list<array{0: Product, 1: int}>  $lines
+     * @return list<array{0: Product, 1: int}>
+     */
+    private function assertLines(User $buyer, array $lines): array
+    {
+        $lines = array_values($lines);
+        if ($lines === [] || count($lines) > self::MAX_LINES) {
+            throw new CheckoutException('invalid_quantity', 'Podés pagar hasta '.self::MAX_LINES.' productos distintos a la vez.', 422);
+        }
+
+        $seen = [];
+        foreach ($lines as [$product, $quantity]) {
+            $this->assertPurchasable($buyer, $product, $quantity);
+            if (isset($seen[$product->id])) {
+                throw new CheckoutException('invalid_quantity', 'Ese producto está repetido en el pago.', 422);
+            }
+            $seen[$product->id] = true;
+        }
+
+        $storeId = $lines[0][0]->store_id;
+        if (collect($lines)->contains(fn ($line) => $line[0]->store_id !== $storeId)) {
+            throw new CheckoutException('mixed_stores', 'Cada pago con PayPal es para un solo comercio.', 422);
+        }
+
+        return $lines;
+    }
+
     private function assertPurchasable(User $buyer, Product $product, int $quantity): void
     {
         $product->loadMissing('store');
@@ -272,18 +349,44 @@ class PayPalCheckoutService
         }
     }
 
-    /** Comprador, producto y cantidad salen del custom_id que LaU puso al crear la orden. */
+    /**
+     * Comprador, productos y cantidades salen del custom_id que LaU puso al crear la orden.
+     *
+     * @return array<int, int> product_id => cantidad
+     */
     private function purchaseFrom(array $order, int $buyerId): array
     {
         $customId = $order['purchase_units'][0]['custom_id'] ?? '';
-        if (! is_string($customId) || preg_match('/^lau\|u(\d+)\|p(\d+)\|q(\d+)$/', $customId, $m) !== 1 || (int) $m[1] !== $buyerId) {
-            throw new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['custom_id ajeno']);
+        $notFound = fn () => new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['custom_id ajeno']);
+        if (! is_string($customId)) {
+            throw $notFound();
         }
 
-        return [(int) $m[2], (int) $m[3]];
+        // Un producto: lau|u7|p12|q2 — varios del mismo comercio: lau|u7|12x2,15x1
+        if (preg_match('/^lau\|u(\d+)\|p(\d+)\|q(\d+)$/', $customId, $m) === 1) {
+            $refs = [(int) $m[2] => (int) $m[3]];
+        } elseif (preg_match('/^lau\|u(\d+)\|((?:\d+x\d+,){1,'.(self::MAX_LINES - 1).'}\d+x\d+)$/', $customId, $m) === 1) {
+            $refs = [];
+            foreach (explode(',', $m[2]) as $pair) {
+                [$id, $quantity] = array_map('intval', explode('x', $pair));
+                if (isset($refs[$id])) {
+                    throw $notFound();
+                }
+                $refs[$id] = $quantity;
+            }
+        } else {
+            throw $notFound();
+        }
+
+        if ((int) $m[1] !== $buyerId) {
+            throw $notFound();
+        }
+
+        return $refs;
     }
 
-    private function assertOrderMatches(array $order, string $merchantId, int $buyerId, int $productId, int $quantity, string $total, bool $payeeRequired = true): void
+    /** @param  array<int, int>  $refs */
+    private function assertOrderMatches(array $order, string $merchantId, int $buyerId, array $refs, ?int $storeId, string $total, bool $payeeRequired = true): void
     {
         $units = $order['purchase_units'] ?? null;
         if (! is_array($units) || count($units) !== 1 || ! is_array($units[0] ?? null)) {
@@ -291,8 +394,8 @@ class PayPalCheckoutService
         }
         $unit = $units[0];
 
-        if (($unit['reference_id'] ?? null) !== self::reference($productId)
-            || ($unit['custom_id'] ?? null) !== self::customId($buyerId, $productId, $quantity)) {
+        if (($unit['reference_id'] ?? null) !== self::reference($refs, $storeId)
+            || ($unit['custom_id'] ?? null) !== self::customId($buyerId, $refs)) {
             throw new CheckoutException('order_not_found', 'No encontramos ese pago.', 404, ['referencia o comprador distintos']);
         }
 
@@ -360,13 +463,41 @@ class PayPalCheckoutService
         return intdiv($cents, 100).'.'.str_pad((string) ($cents % 100), 2, '0', STR_PAD_LEFT);
     }
 
-    private static function reference(int $productId): string
+    /** @param  list<array{0: Product, 1: int}>  $lines */
+    private static function linesCents(array $lines): int
     {
-        return 'LAU-P'.$productId;
+        return array_sum(array_map(fn (array $line) => self::cents($line[0]->price) * $line[1], $lines));
     }
 
-    private static function customId(int $buyerId, int $productId, int $quantity): string
+    /**
+     * @param  list<array{0: Product, 1: int}>  $lines
+     * @return array<int, int>
+     */
+    private static function refs(array $lines): array
     {
-        return "lau|u{$buyerId}|p{$productId}|q{$quantity}";
+        $refs = [];
+        foreach ($lines as [$product, $quantity]) {
+            $refs[$product->id] = $quantity;
+        }
+
+        return $refs;
+    }
+
+    /** @param  array<int, int>  $refs */
+    private static function reference(array $refs, ?int $storeId): string
+    {
+        return count($refs) === 1 ? 'LAU-P'.array_key_first($refs) : 'LAU-S'.$storeId;
+    }
+
+    /** @param  array<int, int>  $refs */
+    private static function customId(int $buyerId, array $refs): string
+    {
+        if (count($refs) === 1) {
+            $productId = array_key_first($refs);
+
+            return "lau|u{$buyerId}|p{$productId}|q{$refs[$productId]}";
+        }
+
+        return "lau|u{$buyerId}|".implode(',', array_map(fn ($id, $quantity) => "{$id}x{$quantity}", array_keys($refs), $refs));
     }
 }

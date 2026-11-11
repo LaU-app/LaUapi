@@ -7,7 +7,7 @@
   <title>Tu comercio fue verificado</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f2f9;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#141416;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Ya podés conectar PayPal y vender a estudiantes en LaU Marketplace.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Tu negocio ya tiene el distintivo de verificado en LaU Marketplace.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2f9;padding:32px 12px;">
     <tr>
       <td align="center">
@@ -17,7 +17,7 @@
               <span style="display:inline-block;background:#ffffff;border-radius:14px;padding:8px 12px;">
                 <img src="{{ $logoUrl }}" alt="LaU" height="28" style="display:block;height:28px;width:auto;border:0;">
               </span>
-              <p style="margin:24px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e9d5ff;font-weight:700;">Comercio verificado</p>
+              <p style="margin:24px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e9d5ff;font-weight:700;">Negocio verificado</p>
               <h1 style="margin:0;font-size:26px;line-height:32px;color:#ffffff;font-weight:800;">{{ $storeName }} ya forma parte de LaU Marketplace</h1>
             </td>
           </tr>
@@ -25,11 +25,11 @@
             <td style="padding:28px 32px 8px;">
               <p style="margin:0 0 16px;font-size:16px;line-height:24px;">Hola {{ $legalRepresentative }},</p>
               <p style="margin:0 0 16px;font-size:16px;line-height:24px;">El equipo de LaU revisó tu solicitud y <strong>aprobó tu comercio</strong>. Tu tienda ya muestra el distintivo de <strong>Verificado por LaU</strong>.</p>
-              <p style="margin:0 0 24px;font-size:16px;line-height:24px;">Falta un último paso para cobrar en línea: conectar tu cuenta PayPal Business. Los pagos de los estudiantes llegan directamente a esa cuenta.</p>
+              <p style="margin:0 0 24px;font-size:16px;line-height:24px;">Ya podés vender: los estudiantes apartan y pagan al recibir. Si además querés cobrar en línea, pedí PayPal desde tu panel cuando quieras; es opcional y lo aprobamos aparte.</p>
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
                 <tr>
                   <td style="border-radius:999px;background:#141416;">
-                    <a href="{{ $connectUrl }}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">Conectar PayPal</a>
+                    <a href="{{ $connectUrl }}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">Abrir mi panel</a>
                   </td>
                 </tr>
               </table>
@@ -39,9 +39,9 @@
             <td style="padding:0 32px 8px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5fc;border-radius:16px;">
                 <tr><td style="padding:18px 20px 6px;font-size:13px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.06em;">Próximos pasos</td></tr>
-                <tr><td style="padding:4px 20px;font-size:14px;line-height:22px;">1. Entrá a LaU → Marketplace → <em>¿Tenés un comercio?</em></td></tr>
-                <tr><td style="padding:4px 20px;font-size:14px;line-height:22px;">2. Tocá <strong>Conectar con PayPal</strong> e iniciá sesión con tu cuenta Business.</td></tr>
-                <tr><td style="padding:4px 20px 18px;font-size:14px;line-height:22px;">3. Publicá tus productos: los estudiantes podrán pagarlos con PayPal.</td></tr>
+                <tr><td style="padding:4px 20px;font-size:14px;line-height:22px;">1. Publicá tus productos y elegí en qué campus entregás.</td></tr>
+                <tr><td style="padding:4px 20px;font-size:14px;line-height:22px;">2. Respondé a los estudiantes desde el chat de LaU.</td></tr>
+                <tr><td style="padding:4px 20px 18px;font-size:14px;line-height:22px;">3. Opcional: en <strong>Pagos en línea</strong>, pedí cobrar con PayPal.</td></tr>
               </table>
             </td>
           </tr>

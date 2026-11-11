@@ -28,6 +28,17 @@ class Store extends Model
         return $this->hasOne(StoreVerification::class);
     }
 
+    /** Solicitudes de pasarelas de pago (aparte de la verificación). */
+    public function paymentGateways()
+    {
+        return $this->hasMany(StorePaymentGateway::class)->latest('id');
+    }
+
+    public function paypalGateway()
+    {
+        return $this->hasOne(StorePaymentGateway::class)->where('gateway', StorePaymentGateway::PAYPAL)->latestOfMany();
+    }
+
     /** Verificada por LaU (revisión legal aprobada en el panel). */
     public function getIsVerifiedAttribute(): bool
     {

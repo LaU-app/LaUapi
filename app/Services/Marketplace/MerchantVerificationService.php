@@ -4,6 +4,7 @@ namespace App\Services\Marketplace;
 
 use App\Mail\MerchantApprovedMail;
 use App\Models\Store;
+use App\Models\StorePaymentGateway;
 use App\Models\StoreVerification;
 use App\Services\PayPal\PayPalClient;
 use App\Services\PayPal\SellerStatus;
@@ -17,8 +18,9 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * Ciclo de vida de un comercio verificado:
- * solicitud legal → revisión de LaU (panel admin) → conexión con PayPal → habilitado.
+ * Ciclo de vida de un negocio verificado:
+ * solicitud legal → revisión de LaU (panel del equipo) → negocio verificado.
+ * Aparte y opcional: solicitud de PayPal → aprobación de LaU → conexión con PayPal → cobra en línea.
  *
  * LaU decide la verificación legal; PayPal decide si el comercio puede cobrar.
  * El estado de PayPal se consulta siempre a PayPal y aquí solo se guarda la última lectura.
@@ -31,28 +33,39 @@ class MerchantVerificationService
 
     public function __construct(private readonly PayPalClient $paypal) {}
 
-    /** El comercio envía (o reenvía tras correcciones) su solicitud. */
-    public function submit(Store $store, array $data, ?UploadedFile $document): StoreVerification
+    /**
+     * El negocio envía (o reenvía tras correcciones) su solicitud legal.
+     *
+     * @param  array<string, UploadedFile>  $files  documentos por tipo (ver StoreVerification::DOCUMENTS)
+     */
+    public function submit(Store $store, array $data, array $files = []): StoreVerification
     {
         if (in_array($store->verification_status, ['approved', 'suspended'], true)) {
             throw ValidationException::withMessages([
                 'store' => $store->verification_status === 'approved'
-                    ? 'Tu comercio ya está verificado.'
-                    : 'Tu comercio está suspendido. Escribinos para revisarlo.',
+                    ? 'Tu negocio ya está verificado.'
+                    : 'Tu negocio está suspendido. Escribinos para revisarlo.',
             ]);
         }
 
-        return DB::transaction(function () use ($store, $data, $document) {
+        return DB::transaction(function () use ($store, $data, $files) {
             $verification = $store->verification()->firstOrNew();
-            $previousDocument = $verification->document_path;
+            $replaced = [];
 
-            if ($document) {
-                $verification->document_path = $document->store(self::DOCUMENTS_DIR, self::DOCUMENTS_DISK);
-                $verification->document_original_name = Str::limit($document->getClientOriginalName(), 150, '');
-            }
+            foreach (StoreVerification::DOCUMENTS as $kind => [$pathColumn, $nameColumn]) {
+                $file = $files[$kind] ?? null;
+                if ($file instanceof UploadedFile) {
+                    if ($verification->{$pathColumn}) {
+                        $replaced[] = $verification->{$pathColumn};
+                    }
+                    $verification->{$pathColumn} = $file->store(self::DOCUMENTS_DIR, self::DOCUMENTS_DISK);
+                    $verification->{$nameColumn} = Str::limit($file->getClientOriginalName(), 150, '');
+                }
 
-            if (! $verification->document_path) {
-                throw ValidationException::withMessages(['document' => 'Adjuntá el documento legal del comercio (PDF o imagen).']);
+                // Un negocio verificado tiene que estar inscrito: todos los documentos son obligatorios.
+                if (! $verification->{$pathColumn}) {
+                    throw ValidationException::withMessages([$kind => 'Adjuntá: '.StoreVerification::DOCUMENTS[$kind][2].'.']);
+                }
             }
 
             $verification->fill($data + [
@@ -66,12 +79,53 @@ class MerchantVerificationService
 
             $store->forceFill(['verification_status' => 'submitted', 'verified_at' => null])->save();
 
-            if ($document && $previousDocument && $previousDocument !== $verification->document_path) {
-                Storage::disk(self::DOCUMENTS_DISK)->delete($previousDocument);
-            }
+            DB::afterCommit(fn () => Storage::disk(self::DOCUMENTS_DISK)->delete($replaced));
 
             return $verification;
         });
+    }
+
+    /**
+     * Pide una pasarela de pago. Es aparte de la verificación: se puede pedir al registrarse
+     * (mientras LaU revisa los papeles) o en cualquier momento después.
+     */
+    public function requestGateway(Store $store, string $gateway, ?string $name = null, ?string $note = null): StorePaymentGateway
+    {
+        if (! in_array($store->verification_status, ['submitted', 'approved'], true)) {
+            throw ValidationException::withMessages([
+                'gateway' => 'Las pasarelas de pago son para negocios verificados. Primero enviá tu verificación.',
+            ]);
+        }
+
+        if ($gateway === StorePaymentGateway::PAYPAL) {
+            $current = $store->paymentGateways()->where('gateway', StorePaymentGateway::PAYPAL)->first();
+            if ($current && $current->status !== 'rejected') {
+                return $current;
+            }
+        }
+
+        return $store->paymentGateways()->create([
+            'gateway' => $gateway,
+            'gateway_name' => $gateway === StorePaymentGateway::OTHER ? Str::limit(trim((string) $name), 80, '') : null,
+            'note' => $note,
+            'status' => 'requested',
+            'requested_at' => now(),
+        ]);
+    }
+
+    /** El equipo de LaU aprueba o rechaza una pasarela. Aprobar PayPal habilita el botón "Conectar con PayPal". */
+    public function reviewGateway(StorePaymentGateway $gateway, bool $approve, string $reviewer, ?string $notes = null): void
+    {
+        if ($approve && $gateway->gateway === StorePaymentGateway::PAYPAL && $gateway->store->verification_status !== 'approved') {
+            throw ValidationException::withMessages(['gateway' => 'Primero aprobá la verificación legal del negocio.']);
+        }
+
+        $gateway->update([
+            'status' => $approve ? 'approved' : 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => $reviewer,
+            'review_notes' => $notes,
+        ]);
     }
 
     /**
@@ -117,6 +171,9 @@ class MerchantVerificationService
     {
         if ($store->verification_status !== 'approved') {
             throw ValidationException::withMessages(['store' => 'LaU debe aprobar la verificación antes de conectar PayPal.']);
+        }
+        if ($store->paymentGateways()->where('gateway', StorePaymentGateway::PAYPAL)->where('status', 'approved')->doesntExist()) {
+            throw ValidationException::withMessages(['store' => 'Primero pedí cobrar con PayPal; el equipo de LaU lo aprueba aparte.']);
         }
 
         $trackingId = $store->paypal_tracking_id ?: 'lau-store-'.$store->id.'-'.Str::lower(Str::random(6));

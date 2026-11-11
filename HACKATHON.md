@@ -25,8 +25,11 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
 
 ## What we built
 
-1. **Verified merchants.** A business applies inside the app with its legal data: legal name, NIT (tax ID), NRC for companies, legal representative and a supporting document. The LaU team reviews the application in our admin panel and approves it, requests changes or suspends the business. Approval sends an email from LaU.
-2. **PayPal onboarding for each merchant.** The approved merchant connects their PayPal Business account with **Partner Referrals**. LaU then asks PayPal for the seller status and treats PayPal as the source of truth. It checks that the account can receive payments, that the primary email is confirmed and that our platform has OAuth permissions. Only then does the store get the **"Verified by LaU · PayPal"** badge and accept online payments.
+1. **Three separate seller levels.** Each level is optional and unlocked on its own:
+   - **Store (student venture).** Anyone can open a store with a name and logo, no paperwork. Buyers reserve and pay on delivery.
+   - **Verified business.** A legally registered business applies with its legal data and **three documents**: tax registration (NIT/NRC in El Salvador, or the tax ID of its country), commercial registration or deed, and the representative's ID. The LaU team approves it, requests changes or suspends it in our panel. Approval sends an email from LaU.
+   - **Online payments.** A separate, optional request. A business can ask for PayPal while applying or any time later, and the LaU team approves it apart from the legal review. Businesses can also tell us which payment gateway they already use, so we can add more gateways later.
+2. **PayPal onboarding for each merchant.** Once its PayPal request is approved, the business connects its PayPal Business account with **Partner Referrals**. LaU then asks PayPal for the seller status and treats PayPal as the source of truth. It checks that the account can receive payments, that the primary email is confirmed and that our platform has OAuth permissions. Only then does the store get the **"Verified by LaU · PayPal"** badge and accept online payments.
 3. **AI-powered search.** The Marketplace search box understands needs, not just keywords. For example: *"calculadora científica para Cálculo II, máximo $20"* or *"algo para mis clases de matemáticas"*. A *Búsqueda inteligente* (smart search) section appears above the normal results. There, **Jev by TypeSafe AI**, a typed-decision model, evaluates **only real products from verified merchants**. Each pick shows:
    - a match score;
    - the **sentence from the product description that Jev selected as evidence**;
@@ -34,7 +37,7 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
    - **YouTube reviews that Jev confirmed are about that kind of product**, or a clear "no videos or reviews" message.
 
    The student always confirms explicitly before paying with PayPal.
-4. **PayPal checkout to the right merchant.** The backend computes price and total and creates an **Orders v2** order with the merchant as `payee`. The student approves it with the **PayPal JS SDK**. The backend then verifies the order with PayPal and captures it. A paid LaU order exists only after PayPal confirms the capture as `COMPLETED`.
+4. **PayPal checkout to the right merchant.** From a product page, or from the cart: in the cart, each store that accepts PayPal gets its own PayPal button for all its items in one payment, and the other sellers' items are reserved as usual. The backend computes price and total and creates an **Orders v2** order with the merchant as `payee`. The student approves it with the **PayPal JS SDK**. The backend then verifies the order with PayPal and captures it. A paid LaU order exists only after PayPal confirms the capture as `COMPLETED`.
 5. **AI shopping agent with chat history.** From the smart search, the student opens a chat with an agent. The agent is an open-weight LLM with tools, and Jev supplies typed judgments and checks each reply against real data. It searches, compares, finds reviews, checks orders and prepares a purchase that the student confirms in PayPal. See [Agentic commerce](#agentic-commerce-an-open-llm-agent-with-jev-as-its-judgment-layer).
 6. **After the sale.** The order shows as **"Pagado"** for both buyer and seller. The buyer can message the seller, and the product is quoted as a rich preview above the message.
 7. **Campus-only delivery, with a 3D campus map.** Every product is delivered **inside a university campus**, so no one has to meet a stranger somewhere else in the country.
@@ -43,7 +46,7 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
    - The LaU team creates **campus fairs**, and each fair gets an announcement shown only to students of that campus.
    - Campus locations come from Google Places, and **Jev picks which candidate is the actual campus**. If Jev is unsure, nothing is saved and a person decides.
 8. **The product on the web, by its photo.** Google Cloud Vision (*Web Detection*) finds pages that show the product photo. **Jev keeps only pages about the same product.** The agent can use this too (`find_product_on_web`).
-9. **Students sell too.** A student without a registered business still gets a personal seller dashboard under their own name. Verification is what unlocks a store name and PayPal payments.
+9. **Students sell too.** A student can sell under their own name or open a store (a student venture) with a name and logo. Legal verification unlocks the verified badge; online payments are a separate request.
 10. **LaU team panel inside the app** (`/equipo`). LaU staff log in with a separate, short-lived admin session that only works on the review API. They approve, request changes, suspend or re-check PayPal for each merchant. It shows only merchant applications, never other users' data.
 
 ## What we built during the hackathon
