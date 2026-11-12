@@ -249,7 +249,30 @@ Use **two browsers, or one normal window and one private window**, so you can be
 | Confirmo que quiero comprar… | I confirm I want to buy… |
 | Pagado | Paid |
 | Mis compras / Mis ventas | My purchases / My sales |
-| ¿Tenés un comercio? | Do you have a business? |
+| ¿Tenés un negocio? | Do you have a business? |
 | Verificado por LaU | Verified by LaU |
 | Conectar con PayPal | Connect with PayPal |
-| Ya terminé, verificar | I'm done, verify |
+| Pedir PayPal · Pagos en línea | Request PayPal · Online payments |
+| Pagar con PayPal (carrito) | Pay with PayPal (cart) |
+| Negocio verificado · Emprendimiento | Verified business · Student venture |
+| Ya terminé | I'm done (check PayPal status) |
+
+## Key commits
+
+The most important Marketplace commits, in order. All of them were made during the Submission Period.
+
+| Date | Repo | Commit | What it adds |
+|---|---|---|---|
+| 2026-11-08 | Backend | [`7f1b203`](https://github.com/LaU-app/LaUapi/commit/7f1b203) | Verified merchants (KYB review), PayPal Partner Referrals onboarding, PayPal Orders v2 checkout with the merchant as payee, and AI search with Jev. |
+| 2026-11-08 | Frontend | [`5507b20`](https://github.com/LaU-app/LaU/commit/5507b20) | Merchant application flow, PayPal checkout sheet with the official JS SDK, verified badges and the AI search UI. |
+| 2026-11-09 | Backend | [`8d1cc11`](https://github.com/LaU-app/LaUapi/commit/8d1cc11) | AI search with evidence: Jev picks the sentence that justifies each recommendation, plus YouTube reviews filtered by Jev. |
+| 2026-11-09 | Backend | [`031ee14`](https://github.com/LaU-app/LaUapi/commit/031ee14) | Approval email from LaU to the merchant and hackathon preparation. |
+| 2026-11-09 | Frontend | [`e72b0e0`](https://github.com/LaU-app/LaU/commit/e72b0e0) | Smart search inside the Marketplace search box and the personal seller dashboard. |
+| 2026-11-09 | Frontend | [`34ace52`](https://github.com/LaU-app/LaU/commit/34ace52) | Assistant inside search, business landing page and product preview quoted in the buyer–seller chat. |
+| 2026-11-10 | Backend | [`7a19616`](https://github.com/LaU-app/LaUapi/commit/7a19616) | AI shopping agent (open-weight LLM with tools + Jev gate and per-sentence grounding), in-app LaU admin panel API and removal of secrets from files. |
+| 2026-11-10 | Frontend | [`fb2c8c0`](https://github.com/LaU-app/LaU/commit/fb2c8c0) | Agent chat with history, LaU admin panel (/equipo) and Google login without a client secret in the browser. |
+| 2026-11-10 | Backend | [`b17613d`](https://github.com/LaU-app/LaUapi/commit/b17613d) | Campus-only delivery (server validates the pin inside the campus), campus fairs with targeted ads, and finding the product on the web by its photo (Cloud Vision + Jev). |
+| 2026-11-10 | Frontend | [`06632e6`](https://github.com/LaU-app/LaU/commit/06632e6) | 3D campus map of El Salvador universities, GPS "Where am I?", delivery point picker and campus fairs. |
+| 2026-11-10 | Frontend | [`53e27a0`](https://github.com/LaU-app/LaU/commit/53e27a0) | 3D buildings map style, exact camera on each campus. |
+| 2026-11-11 | Backend | [`4985874`](https://github.com/LaU-app/LaUapi/commit/4985874) | Three seller levels (venture → verified business → optional payment gateways), PayPal cart checkout for several products of one store, demo catalog and lau:borrar-demo. |
+| 2026-11-11 | Frontend | [`c53e71a`](https://github.com/LaU-app/LaU/commit/c53e71a) | Three-level business panel, PayPal button per store in the cart, delivery card with a rotating 3D map, and the new business landing. |
