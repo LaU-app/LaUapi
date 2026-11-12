@@ -164,6 +164,7 @@ flowchart LR
 | Student (buyer) | LaU, https://lauapp.es | `estudiante.demo@lauapp.es` |
 | Merchant (seller, "Papelería Campus Central") | LaU, https://lauapp.es | `comercio.demo@lauapp.es` |
 | PayPal buyer | PayPal Sandbox popup | `sb-g9x2153766254@personal.example.com` |
+| LaU admin (approves businesses and PayPal requests) | LaU team panel, https://lauapp.es/equipo | `lauapp.es@gmail.com` |
 
 All passwords are in the Devpost **testing instructions** and are not published in this repository. PayPal Sandbox accounts hold only test money.
 
@@ -198,11 +199,12 @@ Use **two browsers, or one normal window and one private window**, so you can be
 2. Open **Chat** to see the buyer's message with the product preview.
 3. **Marketplace → ¿Tenés un comercio?** shows the verified status and the PayPal connection.
 
-**Optional: onboard a brand-new merchant**
+**Optional: the full business flow (apply → LaU approves → PayPal)**
 
-1. Create a new LaU account → **Marketplace → ¿Tenés un comercio?** → create a store → submit the legal form. For testing, any 14-digit NIT such as `0614-010190-101-3` and any PDF are fine.
-2. The LaU team approves applications during judging. You'll receive an email and the app shows **"Conectar con PayPal"**.
-3. Connect with any PayPal **Sandbox Business** account; you can create one at developer.paypal.com → Testing Tools → Sandbox Accounts. Back in LaU, tap **Ya terminé, verificar**: LaU asks PayPal for the seller status and enables payments.
+1. Create a new LaU account → **Marketplace → ¿Tenés un negocio?** → **Crear mi tienda** (name and logo; this is a student venture).
+2. In **Negocio verificado**, tap **Tengo los documentos** and send the legal form. For testing, any 14-digit NIT such as `0614-010190-101-3`, any NRC such as `123456-7` and any three PDFs or images are fine. Check **"También quiero cobrar con PayPal"** to request PayPal at the same time.
+3. Open **https://lauapp.es/equipo** in another window and log in with the LaU admin account. Open the application, review the three documents and tap **Aprobar**. Then, under **Pagos en línea**, tap **Aprobar PayPal**.
+4. Back in the business account, **Pagos en línea → Conectar con PayPal**. Connect any PayPal **Sandbox Business** account (create one at developer.paypal.com → Testing Tools → Sandbox Accounts). Back in LaU, tap **Ya terminé**: LaU asks PayPal for the seller status and enables online payments.
 
 ## Run it locally
 
