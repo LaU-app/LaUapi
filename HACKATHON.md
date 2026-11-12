@@ -2,7 +2,7 @@
 
 > Submission for **Build What's Next with PayPal and AI**.
 >
-> **Testing environment:** the app is hosted on our own infrastructure (`lauapp.es` and `api.lauapp.es`), but this Marketplace feature is in **pre-launch testing**. Every payment runs on **PayPal Sandbox**, so no real money moves. The UI is in **Spanish**, because our users are university students in El Salvador. A glossary of the key buttons is at the end of this file.
+> **Testing environment:** the app is hosted on my own infrastructure (`lauapp.es` and `api.lauapp.es`), but this Marketplace feature is in **pre-launch testing**. Every payment runs on **PayPal Sandbox**, so no real money moves. The UI is in **Spanish**, because its users are university students in El Salvador. A glossary of the key buttons is at the end of this file.
 
 | | |
 |---|---|
@@ -23,13 +23,13 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
 - students have no way to know whether a seller is trustworthy;
 - businesses have no simple way to accept safe online payments from a student audience.
 
-## What we built
+## What I built
 
 1. **Three separate seller levels.** Each level is optional and unlocked on its own:
    - **Store (student venture).** Anyone can open a store with a name and logo, no paperwork. Buyers reserve and pay on delivery.
-   - **Verified business.** A legally registered business applies with its legal data and **three documents**: tax registration (NIT/NRC in El Salvador, or the tax ID of its country), commercial registration or deed, and the representative's ID. The LaU team approves it, requests changes or suspends it in our panel. Approval sends an email from LaU.
-   - **Online payments.** A separate, optional request. A business can ask for PayPal while applying or any time later, and the LaU team approves it apart from the legal review. Businesses can also tell us which payment gateway they already use, so we can add more gateways later.
-2. **PayPal onboarding for each merchant.** Once its PayPal request is approved, the business connects its PayPal Business account with **Partner Referrals**. LaU then asks PayPal for the seller status and treats PayPal as the source of truth. It checks that the account can receive payments, that the primary email is confirmed and that our platform has OAuth permissions. Only then does the store get the **"Verified by LaU · PayPal"** badge and accept online payments.
+   - **Verified business.** A legally registered business applies with its legal data and **three documents**: tax registration (NIT/NRC in El Salvador, or the tax ID of its country), commercial registration or deed, and the representative's ID. The LaU team approves it, requests changes or suspends it in the LaU admin panel. Approval sends an email from LaU.
+   - **Online payments.** A separate, optional request. A business can ask for PayPal while applying or any time later, and the LaU team approves it apart from the legal review. Businesses can also tell LaU which payment gateway they already use, so more gateways can be added later.
+2. **PayPal onboarding for each merchant.** Once its PayPal request is approved, the business connects its PayPal Business account with **Partner Referrals**. LaU then asks PayPal for the seller status and treats PayPal as the source of truth. It checks that the account can receive payments, that the primary email is confirmed and that the LaU platform has OAuth permissions. Only then does the store get the **"Verified by LaU · PayPal"** badge and accept online payments.
 3. **AI-powered search.** The Marketplace search box understands needs, not just keywords. For example: *"calculadora científica para Cálculo II, máximo $20"* or *"algo para mis clases de matemáticas"*. A *Búsqueda inteligente* (smart search) section appears above the normal results. There, **Jev by TypeSafe AI**, a typed-decision model, evaluates **only real products from verified merchants**. Each pick shows:
    - a match score;
    - the **sentence from the product description that Jev selected as evidence**;
@@ -49,7 +49,7 @@ Students constantly need study supplies: calculators, lab coats, drafting kits, 
 9. **Students sell too.** A student can sell under their own name or open a store (a student venture) with a name and logo. Legal verification unlocks the verified badge; online payments are a separate request.
 10. **LaU team panel inside the app** (`/equipo`). LaU staff log in with a separate, short-lived admin session that only works on the review API. They approve, request changes, suspend or re-check PayPal for each merchant. It shows only merchant applications, never other users' data.
 
-## What we built during the hackathon
+## What I built during the hackathon
 
 LaU existed before the Submission Period (Oct 1, 2026). It had the social feed, profiles, chat, study tools and a basic peer-to-peer marketplace with cash-on-delivery orders. Everything in this document was built **during the Submission Period**:
 
@@ -63,13 +63,13 @@ LaU existed before the Submission Period (Oct 1, 2026). It had the social feed, 
 
 The commit history of both repositories shows this work.
 
-## How we use PayPal
+## How I use PayPal
 
 | PayPal capability | Where | Why |
 |---|---|---|
 | OAuth 2.0 `client_credentials` | `app/Services/PayPal/PayPalClient.php` | Platform access token, kept in memory only and never logged |
 | **Partner Referrals API v2**: `POST /v2/customer/partner-referrals` | Merchant "Connect PayPal" | Onboard each verified merchant with a `tracking_id` and a `return_url` back to LaU |
-| **Merchant Integrations**: `GET /v1/customer/partners/{partner}/merchant-integrations?tracking_id=` and `/{merchant_id}` | Seller status | Source of truth: `payments_receivable`, `primary_email_confirmed`, `oauth_integrations` with our client ID and the required scopes |
+| **Merchant Integrations**: `GET /v1/customer/partners/{partner}/merchant-integrations?tracking_id=` and `/{merchant_id}` | Seller status | Source of truth: `payments_receivable`, `primary_email_confirmed`, `oauth_integrations` with LaU's client ID and the required scopes |
 | **Orders API v2**: create, show and capture (`intent: CAPTURE`) | Checkout | `payee.merchant_id` = the merchant; `PayPal-Request-Id` idempotency for create and capture; amount, currency, payee and buyer validated before and after capture |
 | **PayPal JavaScript SDK** (Buttons, `merchant-id`) | Payment sheet | Buyer approval in the official PayPal popup |
 
@@ -80,9 +80,9 @@ Safety rules:
 - **Pending captures.** A `PENDING` capture is never shown as paid.
 - **Errors.** PayPal errors are sanitized: no tokens, secrets or full responses reach the API or the logs.
 
-## How we use AI: Jev by TypeSafe AI
+## How I use AI: Jev by TypeSafe AI
 
-**Tool:** [Jev](https://typesafe.ai/), TypeSafe AI's *System One* decision model (`jev-latest`). We call it from Laravel's HTTP client at `POST https://api.typesafe.ai/v1/systemone`. Jev doesn't generate text. It answers typed questions (`noul` = probability that a statement is true, `choice`, `score`) with calibrated probabilities. That makes it a good fit for commerce: the AI makes judgments, and our code makes the decisions.
+**Tool:** [Jev](https://typesafe.ai/), TypeSafe AI's *System One* decision model (`jev-latest`). I call it from Laravel's HTTP client at `POST https://api.typesafe.ai/v1/systemone`. Jev doesn't generate text. It answers typed questions (`noul` = probability that a statement is true, `choice`, `score`) with calibrated probabilities. That makes it a good fit for commerce: the AI makes judgments, and my code makes the decisions.
 
 | Who | Responsibility |
 |---|---|
@@ -110,7 +110,7 @@ A failed AI call is an error, never a fallback answer. Every decision is stored 
 
 From the smart search, the student taps **Abrir chat** (open chat) and keeps going in a conversation with the **Asistente de compras** (shopping assistant). Chats are saved in a per-student **history**. The assistant can search, compare, check reviews, look up the student's orders and **prepare a purchase**. The student still confirms and pays in PayPal.
 
-**Model:** [Qwen 3.5](https://ollama.com/library/qwen3.5), an open-weight LLM with native tool calling and reasoning. During development it runs locally with [Ollama](https://ollama.com) (`qwen3.5:9b`, or `qwen3.5:4b` on smaller GPUs). Our server has no GPU, so on the hosted demo the same kind of open-weight model is served through an OpenAI-compatible provider (for example `openai/gpt-oss-120b` on Groq). Switching takes three environment variables, with no code changes.
+**Model:** [Qwen 3.5](https://ollama.com/library/qwen3.5), an open-weight LLM with native tool calling and reasoning. During development it runs locally with [Ollama](https://ollama.com) (`qwen3.5:9b`, or `qwen3.5:4b` on smaller GPUs). My server has no GPU, so on the hosted demo the same kind of open-weight model is served through an OpenAI-compatible provider (for example `openai/gpt-oss-120b` on Groq). Switching takes three environment variables, with no code changes.
 
 The agent loop lives in `app/Services/Agent/ShoppingAgent.php`:
 
@@ -231,7 +231,7 @@ Use **two browsers, or one normal window and one private window**, so you can be
 | Working prototype | Hosted at lauapp.es; end-to-end purchase with real PayPal Sandbox payments |
 | Documentation | This file, `docs/paypal-marketplace.md` (backend) and inline code docs |
 | Tools disclosed | PayPal APIs and JS SDK; Jev by TypeSafe AI (judgments); Qwen 3.5 via Ollama, or an open-weight model via Groq on the hosted demo (agent LLM); YouTube Data API v3 (reviews); Google Cloud Vision Web Detection (product photo → web pages); Google Maps JavaScript API with 3D Maps (preview) and Places API (New) (campus map and locations); `@capacitor/geolocation` (GPS); Claude Code (development assistant) |
-| Existing project, significant update | See [What we built during the hackathon](#what-we-built-during-the-hackathon) |
+| Existing project, significant update | See [What I built during the hackathon](#what-i-built-during-the-hackathon) |
 | Public repo + license | MIT license (see `LICENSE`) |
 | Demo video | Pending (under 3 minutes, YouTube) |
 
