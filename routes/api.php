@@ -38,7 +38,7 @@ use App\Http\Controllers\Api\Marketplace\StoreController;
 */
 
 // Rutas públicas (no requieren autenticación)
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/social-login', [AuthController::class, 'socialLogin']);
 Route::post('/auth/check-username', [AuthController::class, 'checkUsername']);

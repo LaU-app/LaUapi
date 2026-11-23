@@ -127,8 +127,8 @@ class PostController extends Controller
         }
 
         $postData = [
-            'titulo' => $request->titulo,
-            'descripcion' => $request->descripcion,
+            'titulo' => $request->filled('titulo') ? strip_tags((string) $request->titulo) : null,
+            'descripcion' => $request->filled('descripcion') ? strip_tags((string) $request->descripcion) : null,
             'tipo' => $request->tipo,
             'visibility' => $request->visibility,
             'user_id' => Auth::id(),
@@ -166,7 +166,7 @@ class PostController extends Controller
                 );
             }
         } else if ($request->tipo === 'texto') {
-            $postData['texto'] = $request->texto;
+            $postData['texto'] = $request->filled('texto') ? strip_tags((string) $request->texto) : null;
         } else if ($request->tipo === 'archivo') {
             $postData['archivo'] = $request->archivo;
             $postData['archivo_nombre_original'] = $request->archivo_nombre_original;
@@ -280,13 +280,13 @@ class PostController extends Controller
         try {
             // Preparar datos para actualizar
             $updateData = [
-                'titulo' => $validatedData['titulo'] ?? '',
-                'descripcion' => $validatedData['descripcion'] ?? ''
+                'titulo' => isset($validatedData['titulo']) ? strip_tags((string) $validatedData['titulo']) : '',
+                'descripcion' => isset($validatedData['descripcion']) ? strip_tags((string) $validatedData['descripcion']) : ''
             ];
 
             // Si es tipo texto, actualizar el campo texto
             if ($post->tipo === 'texto' && isset($validatedData['texto'])) {
-                $updateData['texto'] = $validatedData['texto'];
+                $updateData['texto'] = strip_tags((string) $validatedData['texto']);
             }
 
             // Actualizar el post
